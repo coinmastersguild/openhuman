@@ -197,6 +197,30 @@ async fn resolve(config: &Config, record: &'static ModuleRecord) -> Result<(), S
         return Ok(());
     }
 
+    if record.id == "tinycomputer" && super::computer_config::pioneer_local_runtime() {
+        let module_config = module_config(config, record.id);
+        return blocking(move || {
+            let expected = option_env!("PIONEER_TINYCOMPUTER_SHA256")
+                .filter(|digest| digest.len() == 64)
+                .ok_or_else(|| {
+                    "Pioneer TinyComputer artifact was not pinned at build time".to_owned()
+                })?;
+            let path = Path::new("/opt/pioneer/lib/libtinycomputer.so");
+            let bytes = std::fs::read(path)
+                .map_err(|_| "Pioneer TinyComputer artifact is missing".to_owned())?;
+            use sha2::{Digest, Sha256};
+            let actual = format!("{:x}", Sha256::digest(&bytes));
+            if actual != expected {
+                return Err(
+                    "Pioneer TinyComputer artifact checksum does not match the build pin"
+                        .to_owned(),
+                );
+            }
+            load_local(runtime, path, record.id, module_config)
+        })
+        .await;
+    }
+
     // An override points at a developer's own build. Checked before the pinned
     // release so a module can be iterated on against a live core.
     if let Some(path) = local_override(config, record.id) {

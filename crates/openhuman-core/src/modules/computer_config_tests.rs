@@ -89,3 +89,46 @@ fn chrome_path_is_the_module_browser_executable() {
         json!({"executable": "/Applications/Chrome.app"})
     );
 }
+
+#[test]
+fn pioneer_runtime_routes_every_model_to_the_scoped_local_gateway() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut config = config_in(dir.path());
+    config.computer.planner_model = Some("external/attempt".into());
+    config.computer.rescue_model = Some("external/rescue".into());
+    api_key::store_api_key(&config, "hosted-test-key").unwrap();
+    let value = pioneer_config(&config, Some("tenant-test-key"));
+    assert_eq!(value["jev"]["provider"], "pioneer_local");
+    assert_eq!(
+        value["jev"]["endpoint_url"],
+        "http://10.88.0.1:12500/v1/systemone"
+    );
+    assert_eq!(value["jev"]["model"], "analytic-latest");
+    assert_eq!(
+        value["planner"]["endpoint_url"],
+        "http://10.88.0.1:12500/v1"
+    );
+    for name in ["model", "rescue_model", "output_model"] {
+        assert_eq!(value["planner"][name], "glm-5.3-flash-local");
+    }
+    assert_eq!(value["browser"]["headless"], false);
+    assert!(value["browser"]["args"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("--proxy-server=http://10.88.0.1:3128")));
+    assert!(value["browser"]["args"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("--proxy-bypass-list=localhost;127.0.0.1;[::1]")));
+    assert!(!value.to_string().contains("hosted-test-key"));
+    assert!(!value.to_string().contains("external/"));
+}
+
+#[test]
+fn pioneer_runtime_without_scoped_key_never_uses_hosted_fallback() {
+    let dir = tempfile::tempdir().unwrap();
+    let config = config_in(dir.path());
+    api_key::store_api_key(&config, "hosted-test-key").unwrap();
+    assert_eq!(pioneer_config(&config, None), json!({}));
+    assert_eq!(pioneer_config(&config, Some("  ")), json!({}));
+}

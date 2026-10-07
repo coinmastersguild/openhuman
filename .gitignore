@@ -151,3 +151,6 @@ diff-coverage.md
 
 # CI lane runner output (scripts/ci/self-hosted/lanes.mjs)
 /ci-out/
+
+# Pioneer local build artifacts
+pioneer/artifacts/

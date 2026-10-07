@@ -1,5 +1,8 @@
 <h1 align="center">OpenHuman</h1>
 
+> **Pioneer fork policy:** This is `coinmastersguild/openhuman`. All agent-authored branches, issues and pull requests stay in this public fork. **Never open a pull request or issue upstream, push upstream, or message upstream maintainers.** Upstream and its submodules are read-only sources. The Pioneer policy overrides upstream contribution directions anywhere in this checkout. Runtime changes require owner review and passing CI before release. Never commit private Beast code, credentials, tenant data or customer repositories.
+
+
 <p align="center">
  <img src="./gitbooks/.gitbook/assets/demo.png" alt="The Tet" />
 </p>

@@ -1,5 +1,7 @@
 # OpenHuman
 
+> **Pioneer fork policy:** This is `coinmastersguild/openhuman`. All agent-authored branches, issues and pull requests stay in this public fork. **Never open a pull request or issue upstream, push upstream, or message upstream maintainers.** Upstream and its submodules are read-only sources. The Pioneer policy overrides upstream contribution directions anywhere in this checkout. Runtime changes require owner review and passing CI before release. Never commit private Beast code, credentials, tenant data or customer repositories.
+
 OpenHuman is a React and Tauri v2 desktop assistant with an in-process Rust
 core. The core also exposes JSON-RPC and a CLI.
 
@@ -355,10 +357,7 @@ sandboxing, timeouts, and progress events.
   cache layout, run policy, progress events and generic harness tools (the
   session todo list, goals, delegation graph) go to `vendor/tinyagents`
   (`tinyagents-harness` / `tinyagents-graph`); OpenHuman keeps only the host
-  adapters (scope, dispatch, approvals, progress projection). Open the
-  upstream PR in that repo first, then move the gitlink here. A host-side
-  workaround for a harness or parser bug is a stopgap, not a fix: file or
-  fix it upstream in the same PR.
+  adapters (scope, dispatch, approvals, progress projection). Keep dependency changes as reviewed, pinned public-source patches under `pioneer/patches/` in this fork. Do not open upstream PRs or issues. Preserve the owning component boundary and its license.
 - `openhuman_embed::Runtime` → `Agent` is the public library API: one runtime
   per process (features, services, backend URL, TinyHumans API key), then any
   number of independently configured agents on it (`AgentSpec`: provider,
@@ -458,13 +457,12 @@ vendored project.
 
 Before changing code, identify the owning repository below. Implement a
 module/library capability, bug fix, or contract change in that submodule,
-raise its PR against that repository's canonical upstream, and update the
-OpenHuman gitlink only after the upstream change is available. OpenHuman may
+record its patch and pinned source revision in this fork under `pioneer/patches/`. Never submit changes upstream. Update the OpenHuman integration and review both together. OpenHuman may
 contain the host adapter and integration tests that prove the composition, but
 do not copy the module implementation into OpenHuman or add a host-side
 workaround for a defect owned by a submodule. For a change that spans a module
 and its host adapter, make both changes in their respective repositories and
-raise the module PR first. Keep PRs and gitlinks independently reviewable.
+keep its owning-module patch independently reviewable in this fork. Keep PRs and gitlinks independently reviewable.
 
 Direct rendered submodules under `vendor/`:
 
@@ -659,8 +657,7 @@ serialization.
 ## Git and platform notes
 
 - Work happens on a branch, never directly on `main`.
-- Push feature branches to the contributor fork and open PRs against
-  `tinyhumansai/openhuman`.
+- Push feature branches to `coinmastersguild/openhuman` and open PRs against its `pioneer` branch only. Never create upstream PRs or issues.
 - Use the issue and PR templates.
 - Fix hook failures caused by your changes.
 - `.husky/pre-push` runs `rust:clippy` only when the push carries Rust

@@ -13,6 +13,34 @@
 use serde_json::{json, Map, Value};
 
 use crate::config::{Config, DecisionModel};
+
+/// Trusted host switch. Agent config cannot change the fixed local routes.
+pub(crate) fn pioneer_local_runtime() -> bool {
+    matches!(
+        std::env::var("PIONEER_LOCAL_RUNTIME").as_deref(),
+        Ok("1" | "true")
+    )
+}
+
+fn pioneer_config(config: &Config, api_key: Option<&str>) -> Value {
+    let Some(api_key) = api_key.filter(|key| !key.trim().is_empty()) else {
+        // Missing scoped identity fails closed; never use a hosted fallback.
+        return json!({});
+    };
+    let mut value = json!({
+        "jev": {"provider": "pioneer_local", "api_key": api_key,
+            "endpoint_url": "http://10.88.0.1:12500/v1/systemone", "model": "analytic-latest",
+            "timeout_ms": 6000, "max_retries": 1},
+        "planner": {"provider": "pioneer_local", "api_key": api_key,
+            "endpoint_url": "http://10.88.0.1:12500/v1", "model": "glm-5.3-flash-local",
+            "rescue_model": "glm-5.3-flash-local", "output_model": "glm-5.3-flash-local"},
+        "browser": {"headless": false, "perception": "tree", "args": ["--no-sandbox", "--disable-dev-shm-usage", "--proxy-server=http://10.88.0.1:3128", "--proxy-bypass-list=localhost;127.0.0.1;[::1]"]}
+    });
+    if let Some(executable) = config.browser.chrome_path.as_ref() {
+        value["browser"]["executable"] = json!(executable);
+    }
+    value
+}
 use crate::inference::provider::factory::lookup_key_for_slug;
 use crate::security::credentials::session_support::{
     is_local_session_token, resolve_backend_credential, BackendCredential,
@@ -83,6 +111,9 @@ fn planner(config: &Config, hosted: Option<&str>) -> Option<Value> {
 /// Build the module configuration for `config`.
 #[must_use]
 pub fn module_config(config: &Config) -> Value {
+    if pioneer_local_runtime() {
+        return pioneer_config(config, std::env::var("MODEL_API_KEY").ok().as_deref());
+    }
     let hosted = tinyhumans_bearer(config);
     let mut out = Map::new();
     if let Some(jev) = jev(config, hosted.as_deref()) {
@@ -114,6 +145,7 @@ pub fn billing_route(config: &Config) -> &'static str {
         Some("open_router") => "direct_openrouter",
         Some("open_jev") => "open_jev",
         Some("sage") => "sage",
+        Some("pioneer_local") => "pioneer_local",
         _ => "unavailable",
     }
 }

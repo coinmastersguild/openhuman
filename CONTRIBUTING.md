@@ -1,5 +1,7 @@
 # Contributing to OpenHuman
 
+> **Pioneer fork policy:** This is `coinmastersguild/openhuman`. All agent-authored branches, issues and pull requests stay in this public fork. **Never open a pull request or issue upstream, push upstream, or message upstream maintainers.** Upstream and its submodules are read-only sources. The Pioneer policy overrides upstream contribution directions anywhere in this checkout. Runtime changes require owner review and passing CI before release. Never commit private Beast code, credentials, tenant data or customer repositories.
+
 Thank you for your interest in contributing to OpenHuman. This guide is the fast path for getting a fresh checkout running locally, validating changes, and opening a pull request without having to piece together setup notes from multiple files.
 
 > **New to open source or coding?** Start with [`docs/CONTRIBUTING-BEGINNERS.md`](docs/CONTRIBUTING-BEGINNERS.md) — it walks you through every step from installing tools to opening your first PR.
@@ -25,7 +27,7 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 - Read the [README](README.md) for product context.
 - Use [`gitbooks/developing/architecture.md`](gitbooks/developing/architecture.md) for the current system architecture.
-- Check [open issues](https://github.com/tinyhumansai/openhuman/issues) and [Discussions](https://github.com/tinyhumansai/openhuman/discussions) before starting work.
+- Check [open issues](https://github.com/coinmastersguild/openhuman/issues) and [Discussions](https://github.com/coinmastersguild/openhuman/discussions) before starting work.
 - Stuck rather than fixing something? [`docs/SUPPORT.md`](docs/SUPPORT.md) routes questions, install trouble, memory behavior, and model problems to the right category; [`docs/community/discussions.md`](docs/community/discussions.md) explains how those threads are triaged.
 - For security issues, follow [SECURITY.md](SECURITY.md) and do not file public issues.
 
@@ -120,7 +122,9 @@ Fork the upstream repository on GitHub first if you plan to submit changes, then
 ```bash
 git clone git@github.com:YOUR_USERNAME/openhuman.git
 cd openhuman
-git remote add upstream git@github.com:tinyhumansai/openhuman.git
+git remote add upstream https://github.com/tinyhumansai/openhuman.git
+git remote set-url --push upstream DISABLED_UPSTREAM_WRITES
+node scripts/pioneer/guard.mjs --configure
 git submodule update --init --recursive
 pnpm install
 ```
@@ -288,8 +292,8 @@ Short version:
 ## Git Workflow
 
 - Fork [tinyhumansai/openhuman](https://github.com/tinyhumansai/openhuman) and push branches to your fork.
-- Pull requests target the upstream `main` branch.
-- Do not push directly to upstream unless you are explicitly authorized to do so.
+- Pull requests target `coinmastersguild/openhuman:pioneer` only.
+- Never push upstream or create upstream pull requests or issues.
 
 ### Branch naming
 
@@ -303,14 +307,14 @@ Use a short descriptive branch name, for example:
 
 ```bash
 git fetch upstream
-git checkout main
-git pull --ff-only upstream main
+git checkout pioneer
+git pull --ff-only origin pioneer
 git checkout -b docs/your-change
 ```
 
 ## Making Changes
 
-1. Start from `main` and create a focused branch.
+1. Start from this fork's `pioneer` branch and create a focused branch.
 2. Keep the diff small and scoped to the issue you are solving.
 3. Run the smallest relevant checks locally before pushing.
 4. Update docs with code whenever behavior, commands, or contributor workflow changes.
@@ -324,7 +328,7 @@ git checkout -b docs/your-change
 ## Submitting Changes
 
 1. Push your branch to your fork.
-2. Open a pull request against `tinyhumansai/openhuman:main`.
+2. Open a pull request against `coinmastersguild/openhuman:pioneer`.
 3. Fill in [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) completely.
 4. Link the issue using a closing keyword such as `Closes #1441`.
 5. Call out any blocked validation commands with the exact command and error.

@@ -1,3 +1,10 @@
+<!-- Pioneer contributions go ONLY to coinmastersguild/openhuman:pioneer.
+Never open a pull request, issue or message upstream. Never include private Beast
+source, tenant data, credentials or private customer repositories. -->
+
+- [ ] This PR targets `coinmastersguild/openhuman:pioneer` only.
+- [ ] Owner review and passing Pioneer runtime CI are required before release.
+
 ## Summary
 
 - What changed and why.
