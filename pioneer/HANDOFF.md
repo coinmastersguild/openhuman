@@ -52,3 +52,13 @@ Generic module search paths, overrides and eager optional modules are disabled;
 unknown preloaded TinyComputer and other native module IDs are refused. MCP
 and shell tools are unaffected. This closes the independently found admission
 bypass rather than relying on a clean environment alone.
+
+## Local fork package (preparation)
+
+A separate generic Linux amd64 core package is being prepared for the public agent
+ template. It uses this fork, an offline local session and the user's MODEL_*
+settings. It carries no Pioneer tenant compile pin or native desktop module and
+must never replace the trusted Beast artifact. Four package acceptance tests are
+committed first and currently fail because the builder does not exist. The
+release will include only its core, GPL license and public build/source receipt;
+no host configuration, tenant state or private image is eligible for packaging.
