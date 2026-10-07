@@ -634,7 +634,7 @@ fn classify_inference_error_for_runtime(err: &str, pioneer_runtime: bool) -> Cla
 }
 
 #[cfg(test)]
-mod pioneer_budget_tests {
+mod pioneer_runtime_budget_tests {
     use super::*;
 
     #[test]
