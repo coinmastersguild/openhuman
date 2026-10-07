@@ -14,6 +14,13 @@ merge rights, organization-wide access or access to private Pioneer repositories
 A runtime release requires owner approval, passing CI and a pinned build receipt.
 No tenant credentials, private control-plane code or tenant data belong here.
 
+Hosted project grants remain read-only and limited to one personal project
+repository. Autonomous runtime PR submission is not implemented. The planned
+flow is a runtime-authored patch followed by an Alpha owner-approved write
+executor, targeting only **coinmastersguild/openhuman**. It must never target
+private Pioneer repositories, other organization repositories or upstream.
+The tenant receives no write credential.
+
 ## Local inference
 
 The trusted host sets `PIONEER_LOCAL_RUNTIME=1` and supplies the tenant's scoped
@@ -63,3 +70,21 @@ a visible browser, acts on a test page, and creates a verifiable workspace
 artifact. Blender and other desktop applications need the same visible tenant
 display and a tested application/tool path. A chat transcript, screenshot alone,
 or an untested VNC connection is not evidence of that flow.
+
+## Local agent-template package
+
+The local agent-template uses a separate generic core from this fork, built with
+`scripts/pioneer/build-local-linux.sh pioneer-local-v0.1.0` on Linux amd64. Its
+offline chat, MCP tools and scheduler use the user's MODEL_* settings. Native
+modules and the hosted decision ranker are excluded from this package; it has no
+Pioneer tenant compile pin and does not assume the Beast gateway exists locally.
+It is not the trusted tenant build and makes no local full-desktop claim.
+
+Only a reviewed fork release may publish the explicit core/license/receipt
+archive. The template must pin both its fork release URL and archive SHA256.
+The package builder requires every recursive dependency at its recorded public
+gitlink, with only the three committed patch overlays. It compares actual file
+bytes to the public trees before and after patching, and rejects extra tracked,
+untracked or ignored compiler inputs. Generated build outputs are not packaged.
+Initial packages target Linux amd64; Apple Silicon uses Docker amd64 emulation.
+Native arm64 packages will require their own tested build and receipt.

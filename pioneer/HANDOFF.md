@@ -52,3 +52,41 @@ Generic module search paths, overrides and eager optional modules are disabled;
 unknown preloaded TinyComputer and other native module IDs are refused. MCP
 and shell tools are unaffected. This closes the independently found admission
 bypass rather than relying on a clean environment alone.
+
+## Local fork package
+
+A separate generic Linux amd64 core package now has a tracked build script,
+`scripts/pioneer/build-local-linux.sh pioneer-local-v0.1.0`. It clears both
+Pioneer-only compile/runtime switches, applies the exact public source patches,
+and builds the offline chat/MCP/scheduler feature set without native modules
+or a hosted decision ranker. It must never replace the compile-pinned Beast
+artifact. Five packaging gates prove switch clearing, explicit payload allowlist,
+clean tracked source, amd64-only output and valid version names.
+
+The package carries only its core, GPL license and public build/source receipt.
+A fork-owned release and a template archive SHA256 pin are still pending review
+and a real clean Linux build. No host configuration, tenant state or private
+image is eligible for packaging. Native desktop integration remains the separate
+Pioneer host flavor; the local package makes no desktop/Blender claim.
+
+The contribution documentation now states that autonomous runtime PR submission
+is unimplemented; future writes require Alpha owner approval and target only the
+public fork. Hosted project grants remain read-only for one personal repository.
+
+Package review found a source-provenance gap: unrelated tracked vendor edits or
+wrong recursive gitlink revisions could enter the generic binary. New failing
+acceptance tests require exact recursive pins, only the three committed overlays,
+and rejection of untracked or ignored compiler inputs before a public build.
+The builder now verifies these boundaries before and after patch application. It
+compares raw source bytes with public Git blobs, so Git clean filters cannot hide
+an edit. An isolated temporary index derives the exact approved overlay tree;
+the actual source/index remain untouched. Packaging remains unpublished pending
+independent review and a fresh Linux build receipt.
+
+The first fresh checkout exposed the public PowerShell CRLF rule: Git checks
+scripts/install.ps1 out with CRLF although its canonical blob uses LF. A new
+failing regression requires this exact public checkout transformation to work,
+while undeclared source normalization and arbitrary clean filters stay refused.
+The verifier now permits only the literal committed `*.ps1 text eol=crlf` rule
+and an exact LF-to-CRLF substitution for those files. Other bytes and file modes
+must match; no local attribute configuration or filter is trusted.
