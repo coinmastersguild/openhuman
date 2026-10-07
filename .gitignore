@@ -154,3 +154,6 @@ diff-coverage.md
 
 # Pioneer local build artifacts
 pioneer/artifacts/
+
+# Public generic package build output; publish only reviewed release assets.
+/pioneer/local-artifacts/

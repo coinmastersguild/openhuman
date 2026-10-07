@@ -11,10 +11,12 @@ function fixture() {
   mkdirSync(join(root, 'scripts/pioneer'), { recursive: true });
   cpSync(script, join(root, 'scripts/pioneer/build-local-linux.sh'));
   writeFileSync(join(root, 'LICENSE'), 'GPL-3.0 fixture\n');
+  writeFileSync(join(root, 'scripts/pioneer/apply-patches.sh'), '#!/bin/sh\nexit 0\n');
+  chmodSync(join(root, 'scripts/pioneer/apply-patches.sh'), 0o755);
   mkdirSync(join(root, 'stubs'));
   const stub = (name, body) => { const path = join(root, 'stubs', name); writeFileSync(path, body); chmodSync(path, 0o755); };
   stub('uname', '#!/bin/sh\ncase "$1" in -s) echo Linux;; -m) echo "${TEST_ARCH:-x86_64}";; esac\n');
-  stub('cargo', `#!/bin/sh\nset -eu\n[ -z "\${PIONEER_TINYCOMPUTER_SHA256+x}" ]\n[ -z "\${PIONEER_LOCAL_RUNTIME+x}" ]\nprintf '%s\\n' "$*" > build-args\nmkdir -p target/release\nprintf 'generic-fork-core\\n' > target/release/openhuman-core\nchmod 755 target/release/openhuman-core\n`);
+  stub('cargo', `#!/bin/sh\nset -eu\n[ -z "\${PIONEER_TINYCOMPUTER_SHA256+x}" ]\n[ -z "\${PIONEER_LOCAL_RUNTIME+x}" ]\nprintf '%s\\n' "$*" > build-args\nmkdir -p target/release\npython3 -c 'import pathlib; pathlib.Path("target/release/openhuman-core").write_bytes(bytes.fromhex("7f454c4602010000000000000000000000003e00") + b"generic-fork-core")'\nchmod 755 target/release/openhuman-core\n`);
   const git = (...args) => { const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' }); assert.equal(result.status, 0, result.stderr); return result.stdout.trim(); };
   git('init', '-q'); git('add', 'scripts', 'LICENSE');
   git('-c', 'user.name=Package Test', '-c', 'user.email=test@example.invalid', 'commit', '-qm', 'public source fixture');
@@ -59,4 +61,14 @@ test('local package refuses uncommitted tracked source', () => {
 test('local package rejects a version that could escape its output directory', () => {
   const f = fixture(); try { const r = f.run({}, '../outside'); assert.notEqual(r.status, 0); assert.match(r.stderr, /version/); }
   finally { f.cleanup(); }
+});
+
+
+test('package verifies the resulting core architecture, independent of host uname', () => {
+  const f = fixture();
+  try {
+    const cargo = join(f.root, 'stubs/cargo');
+    writeFileSync(cargo, readFileSync(cargo, 'utf8').replace('3e00', 'b700'));
+    const r = f.run(); assert.notEqual(r.status, 0); assert.match(r.stderr, /non-amd64 ELF/);
+  } finally { f.cleanup(); }
 });

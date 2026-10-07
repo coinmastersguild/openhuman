@@ -63,3 +63,17 @@ a visible browser, acts on a test page, and creates a verifiable workspace
 artifact. Blender and other desktop applications need the same visible tenant
 display and a tested application/tool path. A chat transcript, screenshot alone,
 or an untested VNC connection is not evidence of that flow.
+
+## Local agent-template package
+
+The local agent-template uses a separate generic core from this fork, built with
+`scripts/pioneer/build-local-linux.sh pioneer-local-v0.1.0` on Linux amd64. Its
+offline chat, MCP tools and scheduler use the user's MODEL_* settings. Native
+modules and the hosted decision ranker are excluded from this package; it has no
+Pioneer tenant compile pin and does not assume the Beast gateway exists locally.
+It is not the trusted tenant build and makes no local full-desktop claim.
+
+Only a reviewed fork release may publish the explicit core/license/receipt
+archive. The template must pin both its fork release URL and archive SHA256.
+Initial packages target Linux amd64; Apple Silicon uses Docker amd64 emulation.
+Native arm64 packages will require their own tested build and receipt.
