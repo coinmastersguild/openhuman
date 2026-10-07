@@ -3,7 +3,10 @@ on:
   pull_request:
     branches: [pioneer]
   push:
-    branches: [pioneer, 'feat/pioneer-*', 'fix/pioneer-*']
+    branches: [pioneer]
+concurrency:
+  group: pioneer-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
