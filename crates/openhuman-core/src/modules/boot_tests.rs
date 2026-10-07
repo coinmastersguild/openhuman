@@ -56,3 +56,10 @@ async fn boot_tolerates_an_empty_search_path() {
     config.modules.allow_download = false;
     load_declared_modules(&config).await;
 }
+
+#[test]
+fn pioneer_runtime_never_autoloads_agent_module_search_paths() {
+    let config = Config::default();
+    assert!(super::generic_autoload_allowed(&config, false));
+    assert!(!super::generic_autoload_allowed(&config, true));
+}

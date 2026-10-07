@@ -114,14 +114,32 @@ impl TinyHumansJevRanker {
             .map_err(|error| RankError::Backend {
                 reason: format!("config unavailable: {error}"),
             })?;
-        let credential = resolve_backend_credential(&config).map_err(|reason| {
-            // The message names what is missing, never a secret.
-            RankError::Backend {
-                reason: format!("no TinyHumans credential ({reason})"),
-            }
-        })?;
-        let base_url = effective_backend_api_url(&config.api_url);
-        let fingerprint = fingerprint(credential.secret(), &base_url);
+        let local = option_env!("PIONEER_TINYCOMPUTER_SHA256").is_some()
+            || matches!(
+                std::env::var("PIONEER_LOCAL_RUNTIME").as_deref(),
+                Ok("1" | "true")
+            );
+        let (secret, base_url) = if local {
+            let secret = std::env::var("MODEL_API_KEY")
+                .ok()
+                .filter(|key| !key.trim().is_empty())
+                .ok_or_else(|| {
+                    RankError::backend(
+                        "Pioneer scoped model key is missing; hosted fallback is disabled",
+                    )
+                })?;
+            (secret, "http://10.88.0.1:12500".to_owned())
+        } else {
+            let credential =
+                resolve_backend_credential(&config).map_err(|reason| RankError::Backend {
+                    reason: format!("no TinyHumans credential ({reason})"),
+                })?;
+            (
+                credential.into_secret(),
+                effective_backend_api_url(&config.api_url),
+            )
+        };
+        let fingerprint = fingerprint(&secret, &base_url);
 
         let mut cached = self
             .cached
@@ -133,7 +151,11 @@ impl TinyHumansJevRanker {
         {
             return Ok(entry.ranker.clone());
         }
-        let mut client_config = ClientConfig::tinyhumans_openrouter(credential.into_secret());
+        let mut client_config = if local {
+            ClientConfig::new(secret)
+        } else {
+            ClientConfig::tinyhumans_openrouter(secret)
+        };
         client_config.base_url = base_url.clone();
         let client = Client::new(client_config)
             .map_err(|error| RankError::invalid_input(error.to_string()))?;
@@ -145,11 +167,19 @@ impl TinyHumansJevRanker {
         // across rebuilds so the catalogue is embedded once per process.
         let retriever: Arc<dyn ToolRanker> = match cached.as_ref() {
             Some(entry) => entry.retriever.clone(),
+            None if local => Arc::new(tinytools::Bm25Ranker),
             None => retriever_for(&config)?,
         };
         let ranker = JevRanker::new(
             evaluator,
-            self.config.clone().with_retriever(retriever.clone()),
+            if local {
+                self.config
+                    .clone()
+                    .with_retriever(retriever.clone())
+                    .with_model("analytic-latest")
+            } else {
+                self.config.clone().with_retriever(retriever.clone())
+            },
         );
         log::info!(
             "[tool-search] jev ranker bound to backend {} ({})",

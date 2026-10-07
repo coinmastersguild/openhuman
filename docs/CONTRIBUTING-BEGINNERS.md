@@ -1,5 +1,7 @@
 # Beginner's Guide to Contributing to OpenHuman
 
+> **Pioneer fork policy:** This is `coinmastersguild/openhuman`. All agent-authored branches, issues and pull requests stay in this public fork. **Never open a pull request or issue upstream, push upstream, or message upstream maintainers.** Upstream and its submodules are read-only sources. The Pioneer policy overrides upstream contribution directions anywhere in this checkout. Runtime changes require owner review and passing CI before release. Never commit private Beast code, credentials, tenant data or customer repositories.
+
 New to open source or coding? This guide walks you through everything from zero to your first pull request — based on real setup pain points that new contributors hit.
 
 For the full contributor reference, see [`CONTRIBUTING.md`](../CONTRIBUTING.md).
@@ -329,7 +331,7 @@ For your first contribution, `pnpm dev` is all you need.
 
 ## Step 4 — Find an issue to work on
 
-1. Go to [github.com/tinyhumansai/openhuman/issues](https://github.com/tinyhumansai/openhuman/issues)
+1. Go to [github.com/tinyhumansai/openhuman/issues](https://github.com/coinmastersguild/openhuman/issues)
 2. Filter by label — look for `good first issue`, `documentation`, or frontend-related labels
 3. Read the issue fully before starting
 4. Leave a comment saying you'd like to work on it — this avoids two people solving the same issue
@@ -401,7 +403,7 @@ git push -u origin your-branch-name
 
 1. Go to your fork on GitHub: `github.com/YOUR_USERNAME/openhuman`
 2. You'll see a **"Compare & pull request"** banner — click it
-3. Make sure the PR targets **`tinyhumansai/openhuman:main`** (not your fork)
+3. Make sure the PR targets **`coinmastersguild/openhuman:pioneer`** (this fork only; never upstream)
 4. Fill in the PR template completely
 5. Link the issue with `Closes #ISSUE_NUMBER` in the description
 6. Submit

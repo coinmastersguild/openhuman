@@ -39,10 +39,10 @@ pub struct ComputerStatus {
     /// `[computer] decision_model`.
     pub decision_model: &'static str,
     /// Who pays for decisions: `hosted`, `direct_openrouter`, `open_jev`,
-    /// `sage`, or `unavailable`.
+    /// `sage`, `pioneer_local`, or `unavailable`.
     pub decision_route: &'static str,
     /// Where planner and rescue calls go: `hosted`, `direct_openrouter`, or
-    /// `unavailable`.
+    /// `pioneer_local`, or `unavailable`.
     pub planner_route: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<ComputerCapabilities>,
@@ -51,12 +51,19 @@ pub struct ComputerStatus {
     pub error: Option<String>,
 }
 
-fn planner_route(config: &Config) -> &'static str {
-    match super::computer_config::module_config(config)["planner"]["provider"].as_str() {
+fn planner_route_for_provider(provider: Option<&str>) -> &'static str {
+    match provider {
         Some("tiny_humans") => "hosted",
         Some("open_router") => "direct_openrouter",
+        Some("pioneer_local") => "pioneer_local",
         _ => "unavailable",
     }
+}
+
+fn planner_route(config: &Config) -> &'static str {
+    planner_route_for_provider(
+        super::computer_config::module_config(config)["planner"]["provider"].as_str(),
+    )
 }
 
 async fn describe(config: &Config) -> Result<Capabilities, String> {

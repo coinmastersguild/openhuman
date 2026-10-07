@@ -1,0 +1,53 @@
+name: Pioneer policy
+on:
+  pull_request:
+    branches: [pioneer]
+  push:
+    branches: [pioneer]
+concurrency:
+  group: pioneer-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  pioneer-policy:
+    if: github.repository == 'coinmastersguild/openhuman'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test scripts/pioneer/guard.test.mjs scripts/pioneer/workflow-boundary.test.mjs
+      - name: Verify fork contribution boundary
+        run: |
+          node scripts/pioneer/guard.mjs https://github.com/coinmastersguild/openhuman.git
+          test "$GITHUB_REPOSITORY" = coinmastersguild/openhuman
+  pioneer-runtime-tests:
+    if: github.repository == 'coinmastersguild/openhuman'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@1.96.1
+      - name: Apply pinned public-source patches
+        run: scripts/pioneer/apply-patches.sh
+      - name: Check local provider and headed browser behavior
+        run: |
+          cd vendor/tinycomputer
+          ../../scripts/ci-cancel-aware.sh cargo test --locked --jobs 4 -p tinycomputer-engine --features planner pioneer
+          ../../scripts/ci-cancel-aware.sh cargo test --locked --jobs 4 -p tinycomputer pioneer_headed
+      - name: Check local decisions client
+        run: |
+          cd vendor/tinycomputer/vendor/tinyinference
+          ../../../../scripts/ci-cancel-aware.sh cargo test --locked --jobs 4 -p tinyinference-decisions pioneer_plaintext
+      - name: Check exact gateway client exceptions
+        run: |
+          cd vendor/pioneer-tinyjevclient
+          ../../scripts/ci-cancel-aware.sh cargo test --locked --jobs 4 pioneer_gateway
+      - name: Check trusted host local configuration
+        run: scripts/ci-cancel-aware.sh cargo test --locked --jobs 4 -p openhuman --no-default-features --features modules,mcp,skills,flows,http-server,scheduler-gate pioneer_runtime --lib
+      - name: Typecheck the real fork core
+        run: scripts/ci-cancel-aware.sh cargo check --locked --jobs 4 -p openhuman-cli --bin openhuman-core --no-default-features --features bin-tools,http-server,modules,mcp,skills,flows,scheduler-gate,jev

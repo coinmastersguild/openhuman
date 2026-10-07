@@ -1,0 +1,321 @@
+diff --git a/crates/tinycomputer-bus/src/agent/types/models.rs b/crates/tinycomputer-bus/src/agent/types/models.rs
+index 46afa1d..554558e 100644
+--- a/crates/tinycomputer-bus/src/agent/types/models.rs
++++ b/crates/tinycomputer-bus/src/agent/types/models.rs
+@@ -19,6 +19,9 @@ pub enum LanguageModelProvider {
+     /// (`https://api.tinyhumans.ai/openai/v1`), with the host's `TinyHumans`
+     /// bearer. It takes the same `vendor/model` ids as `OpenRouter`.
+     TinyHumans,
++    /// Pioneer tenant-local metering gateway. Its only route is
++    /// `http://10.88.0.1:12500/v1`.
++    PioneerLocal,
+ }
+ 
+ /// Non-secret summary of one configured language model: its route and model.
+diff --git a/crates/tinycomputer-bus/src/agentic/types/config.rs b/crates/tinycomputer-bus/src/agentic/types/config.rs
+index 3474527..fd3e8e8 100644
+--- a/crates/tinycomputer-bus/src/agentic/types/config.rs
++++ b/crates/tinycomputer-bus/src/agentic/types/config.rs
+@@ -27,6 +27,8 @@ pub enum JevProvider {
+     /// Levanto Sage (`https://sage.levanto.ai/`), answering the loops' Jev
+     /// questions as its own calibrated decisions; see [`JevConfig::fast`].
+     Sage,
++    /// Pioneer Analytic through the tenant-local metering gateway.
++    PioneerLocal,
+ }
+ 
+ impl JevProvider {
+@@ -39,6 +41,7 @@ impl JevProvider {
+             Self::TypeSafe | Self::OpenRouter | Self::TinyHumansOpenRouter => "jev-latest",
+             Self::OpenJev => "openjev",
+             Self::Sage => "levanto-sage",
++            Self::PioneerLocal => "analytic-latest",
+         }
+     }
+ }
+diff --git a/crates/tinycomputer-bus/src/version/mod.rs b/crates/tinycomputer-bus/src/version/mod.rs
+index 646d2d6..ea4ae41 100644
+--- a/crates/tinycomputer-bus/src/version/mod.rs
++++ b/crates/tinycomputer-bus/src/version/mod.rs
+@@ -8,7 +8,7 @@
+ //! release workflow bumps, which tracks the shipped artifact.
+ 
+ /// The wire contract version this crate defines.
+-pub const CONTRACT_VERSION: (u32, u32) = (2, 8);
++pub const CONTRACT_VERSION: (u32, u32) = (2, 9);
+ 
+ /// Returns whether a host holding [`CONTRACT_VERSION`] can bind to a module
+ /// reporting `module`.
+@@ -22,8 +22,8 @@ pub const CONTRACT_VERSION: (u32, u32) = (2, 8);
+ /// ```
+ /// # use tinycomputer_bus::{is_compatible, CONTRACT_VERSION};
+ /// assert!(is_compatible(CONTRACT_VERSION));
+-/// assert!(is_compatible((2, 8)));
+-/// assert!(!is_compatible((2, 7)));
++/// assert!(is_compatible((2, 9)));
++/// assert!(!is_compatible((2, 8)));
+ /// assert!(!is_compatible((1, 8)));
+ /// ```
+ #[must_use]
+diff --git a/crates/tinycomputer-bus/src/version/version_tests.rs b/crates/tinycomputer-bus/src/version/version_tests.rs
+index 52abe8e..768a7ce 100644
+--- a/crates/tinycomputer-bus/src/version/version_tests.rs
++++ b/crates/tinycomputer-bus/src/version/version_tests.rs
+@@ -6,7 +6,7 @@ use super::{CONTRACT_VERSION, binds, is_compatible};
+ 
+ #[test]
+ fn the_shipped_contract_version_is_pinned() {
+-    assert_eq!(CONTRACT_VERSION, (2, 8));
++    assert_eq!(CONTRACT_VERSION, (2, 9));
+ }
+ 
+ #[test]
+@@ -16,7 +16,9 @@ fn the_contract_binds_to_itself() {
+ 
+ #[test]
+ fn a_newer_minor_on_the_module_side_binds() {
+-    assert!(is_compatible((2, 8)));
++    assert!(is_compatible((2, 9)));
++    // Pioneer 2.9 adds exact local model routes and headed browser configuration.
++    assert!(!is_compatible((2, 8)));
+     assert!(is_compatible((2, 97)));
+     // 2.8 accepts the `open_jev` and `sage` decision providers and the
+     // planner's `tiny_humans` route: a 2.8 host may configure them, which a
+diff --git a/crates/tinycomputer-engine/src/agentic/agentic_tests/resolve_tests.rs b/crates/tinycomputer-engine/src/agentic/agentic_tests/resolve_tests.rs
+index 333e144..5ce8048 100644
+--- a/crates/tinycomputer-engine/src/agentic/agentic_tests/resolve_tests.rs
++++ b/crates/tinycomputer-engine/src/agentic/agentic_tests/resolve_tests.rs
+@@ -293,3 +293,25 @@ fn response_helpers_classify_provider_failures_and_policy_reasons() {
+     assert!(!internal_error("broken").ok);
+     assert!(agent_response("test", &json!({"ok": true})).ok);
+ }
++
++#[test]
++fn pioneer_analytic_only_accepts_its_local_metered_route() {
++    use crate::agentic::runtime::trusted_endpoint;
++    let own = "http://10.88.0.1:12500/v1/systemone";
++    assert!(trusted_endpoint(JevProvider::PioneerLocal, own));
++    for endpoint in [
++        "https://alpha.pioneers.dev/v1/systemone",
++        "https://api.typesafe.ai/v1/systemone",
++        "http://10.88.0.1:8016/v1/systemone",
++        "http://169.254.169.254/v1/systemone",
++    ] {
++        assert!(!trusted_endpoint(JevProvider::PioneerLocal, endpoint));
++    }
++    let mut request = JevConfig::new("tenant-test-key");
++    request.provider = JevProvider::PioneerLocal;
++    let value = JevRuntime::configure(&request)
++        .unwrap()
++        .configuration()
++        .clone();
++    assert_eq!(value.model, "analytic-latest");
++}
+diff --git a/crates/tinycomputer-engine/src/agentic/runtime.rs b/crates/tinycomputer-engine/src/agentic/runtime.rs
+index 4626934..9673ace 100644
+--- a/crates/tinycomputer-engine/src/agentic/runtime.rs
++++ b/crates/tinycomputer-engine/src/agentic/runtime.rs
+@@ -67,6 +67,8 @@ impl JevRuntime {
+         }
+         let mut config = match request.provider {
+             JevProvider::TypeSafe => ClientConfig::new(request.api_key()),
++            JevProvider::PioneerLocal => ClientConfig::new(request.api_key())
++                .with_endpoint_url("http://10.88.0.1:12500/v1/systemone"),
+             JevProvider::OpenRouter => ClientConfig::openrouter(request.api_key()),
+             JevProvider::TinyHumansOpenRouter => {
+                 ClientConfig::tinyhumans_openrouter(request.api_key())
+@@ -264,6 +266,7 @@ pub(super) const fn approved_endpoint(provider: JevProvider) -> &'static str {
+         }
+         JevProvider::OpenJev => "https://api.openjev.sh/v1/systemone",
+         JevProvider::Sage => "https://sage.levanto.ai/",
++        JevProvider::PioneerLocal => "http://10.88.0.1:12500/v1/systemone",
+     }
+ }
+ 
+diff --git a/crates/tinycomputer-engine/src/planner/config.rs b/crates/tinycomputer-engine/src/planner/config.rs
+index a798aef..d9ff3ba 100644
+--- a/crates/tinycomputer-engine/src/planner/config.rs
++++ b/crates/tinycomputer-engine/src/planner/config.rs
+@@ -138,7 +138,7 @@ impl ModelRoute {
+             LanguageModelProvider::TinyHumans => {
+                 self.sdk_name.as_deref().and_then(sanitized_sdk_name)
+             }
+-            LanguageModelProvider::OpenRouter => None,
++            LanguageModelProvider::OpenRouter | LanguageModelProvider::PioneerLocal => None,
+         };
+         Ok(ResolvedRoute {
+             provider: self.provider,
+@@ -163,6 +163,7 @@ pub(super) const fn approved_base_url(provider: LanguageModelProvider) -> &'stat
+     match provider {
+         LanguageModelProvider::OpenRouter => OPEN_ROUTER_BASE_URL,
+         LanguageModelProvider::TinyHumans => TINYHUMANS_BASE_URL,
++        LanguageModelProvider::PioneerLocal => "http://10.88.0.1:12500/v1",
+     }
+ }
+ 
+diff --git a/crates/tinycomputer-engine/src/planner/hosted.rs b/crates/tinycomputer-engine/src/planner/hosted.rs
+index 47b90dc..6eb4e82 100644
+--- a/crates/tinycomputer-engine/src/planner/hosted.rs
++++ b/crates/tinycomputer-engine/src/planner/hosted.rs
+@@ -95,6 +95,7 @@ pub(super) fn chat_model(route: &ModelRoute, model: &str) -> Result<Arc<OpenAiMo
+     let kind = match resolved.provider {
+         LanguageModelProvider::OpenRouter => ProviderKind::OpenRouter,
+         LanguageModelProvider::TinyHumans => ProviderKind::TinyHumans,
++        LanguageModelProvider::PioneerLocal => ProviderKind::OpenAi,
+     };
+     let spec = ProviderSpec::for_kind(kind)
+         .with_model(model)
+diff --git a/crates/tinycomputer-engine/src/planner/planner_tests/route_tests.rs b/crates/tinycomputer-engine/src/planner/planner_tests/route_tests.rs
+index 0490a7f..6a7b0da 100644
+--- a/crates/tinycomputer-engine/src/planner/planner_tests/route_tests.rs
++++ b/crates/tinycomputer-engine/src/planner/planner_tests/route_tests.rs
+@@ -187,3 +187,33 @@ fn each_model_reports_its_route_and_model_for_describe() {
+         ))
+     );
+ }
++
++#[test]
++fn pioneer_local_route_is_exact_and_cannot_redirect_credentials() {
++    let own = "http://10.88.0.1:12500/v1";
++    assert!(trusted_base_url(LanguageModelProvider::PioneerLocal, own));
++    for endpoint in [
++        "https://alpha.pioneers.dev/v1",
++        "https://openrouter.ai/api/v1",
++        "http://10.88.0.1:12501/v1",
++        "http://10.88.0.1.evil/v1",
++        "http://169.254.169.254/v1",
++    ] {
++        assert!(!trusted_base_url(
++            LanguageModelProvider::PioneerLocal,
++            endpoint
++        ));
++    }
++    let route = ModelRoute {
++        api_key: "tenant-test-key".into(),
++        provider: LanguageModelProvider::PioneerLocal,
++        endpoint_url: Some(own.into()),
++        sdk_name: Some("ignored".into()),
++    };
++    assert_eq!(
++        chat_model(&route, "glm-5.3-flash-local")
++            .unwrap()
++            .base_url(),
++        own
++    );
++}
+diff --git a/crates/tinycomputer/src/tinybus_module/config.rs b/crates/tinycomputer/src/tinybus_module/config.rs
+index efd7213..8f44dad 100644
+--- a/crates/tinycomputer/src/tinybus_module/config.rs
++++ b/crates/tinycomputer/src/tinybus_module/config.rs
+@@ -22,6 +22,8 @@ pub(crate) struct BrowserDefaults {
+     pub(crate) args: Vec<String>,
+     /// How a task reads a page: by sight (the default) or the tree alone.
+     pub(crate) perception: Perception,
++    /// Optional host-owned headed/headless policy, applied to launched sessions.
++    pub(crate) headless: Option<bool>,
+ }
+ 
+ impl BrowserDefaults {
+@@ -54,6 +56,11 @@ impl BrowserDefaults {
+             user_agent: text("user_agent")?,
+             ..Self::default()
+         };
++        defaults.headless = match browser.get("headless") {
++            None => None,
++            Some(serde_json::Value::Bool(value)) => Some(*value),
++            Some(_) => return Err(invalid()),
++        };
+         if let Some(args) = browser.get("args") {
+             defaults.args = args
+                 .as_array()
+@@ -67,10 +74,9 @@ impl BrowserDefaults {
+             Some("tree") => Perception::Tree,
+             Some(_) => return Err(invalid()),
+         };
+-        if browser
+-            .keys()
+-            .any(|key| !["executable", "user_agent", "args", "perception"].contains(&key.as_str()))
+-        {
++        if browser.keys().any(|key| {
++            !["executable", "user_agent", "args", "perception", "headless"].contains(&key.as_str())
++        }) {
+             return Err(invalid());
+         }
+         Ok(defaults)
+@@ -81,6 +87,9 @@ impl BrowserDefaults {
+     /// executable and no launch arguments.
+     pub(crate) fn apply(&self, mut options: SessionOptions) -> SessionOptions {
+         if options.endpoint.is_none() {
++            if let Some(headless) = self.headless {
++                options.headless = headless;
++            }
+             if options.executable.is_none() {
+                 options.executable.clone_from(&self.executable);
+             }
+diff --git a/crates/tinycomputer/src/tinybus_module/tinybus_module_tests/config_tests.rs b/crates/tinycomputer/src/tinybus_module/tinybus_module_tests/config_tests.rs
+index 5b8897c..29a0cfc 100644
+--- a/crates/tinycomputer/src/tinybus_module/tinybus_module_tests/config_tests.rs
++++ b/crates/tinycomputer/src/tinybus_module/tinybus_module_tests/config_tests.rs
+@@ -250,3 +250,22 @@ fn the_cursor_is_configured_or_refused() {
+     }
+     assert!(DesktopService::from_config(&json!({"cursor": "off"})).is_ok());
+ }
++
++#[test]
++fn pioneer_headed_browser_policy_is_applied_to_new_sessions() {
++    let defaults = super::super::config::BrowserDefaults::from_config(
++        &json!({"browser": {"headless": false}}),
++    )
++    .unwrap();
++    assert!(
++        !defaults
++            .apply(tinycomputer_browser::SessionOptions::default())
++            .headless
++    );
++    assert!(
++        super::super::config::BrowserDefaults::from_config(
++            &json!({"browser": {"headless": "false"}})
++        )
++        .is_err()
++    );
++}
+diff --git a/crates/tinycomputer/tests/public_api_tests.rs b/crates/tinycomputer/tests/public_api_tests.rs
+index 2b559af..987d35d 100644
+--- a/crates/tinycomputer/tests/public_api_tests.rs
++++ b/crates/tinycomputer/tests/public_api_tests.rs
+@@ -34,7 +34,7 @@ fn the_crate_re_exports_the_contract_rather_than_redefining_it() {
+ #[test]
+ fn the_shipped_contract_binds_to_itself() {
+     assert!(is_compatible(CONTRACT_VERSION));
+-    assert_eq!(CONTRACT_VERSION, (2, 8));
++    assert_eq!(CONTRACT_VERSION, (2, 9));
+ }
+ 
+ #[test]
+diff --git a/docs/technical/specs/desktop-module-contract.md b/docs/technical/specs/desktop-module-contract.md
+index 4114c46..fa18381 100644
+--- a/docs/technical/specs/desktop-module-contract.md
++++ b/docs/technical/specs/desktop-module-contract.md
+@@ -41,7 +41,8 @@ engine's argument types, the permission preflight, and the bus surface.
+   `open_jev` and `sage` decision providers, `JevConfig.fast`,
+   `JevConfiguration.fast`, the planner's `LanguageModelProvider` routes, and
+   `Capabilities.decision_model`, `planner_model`, `rescue_model`, and
+-  `output_model`, all optional) return an
++  `output_model`, all optional; Pioneer 2.9 adds the `pioneer_local`
++  decision and planner providers and optional `browser.headless`) return an
+   `AgentResponse` instead — see [`unified-agent.md`](unified-agent.md). They
+   share this interface because a TinyBus module exports one interface.
+ - The thirteen browser members (2.6) close the list, each prefixed `Browser`
+@@ -174,3 +175,12 @@ engine's argument types, the permission preflight, and the bus surface.
+   dynamic loader and calls `Version` before a release archive is accepted.
+ - The generated dispatch table and the embedded module manifest are both
+   asserted against `tinycomputer_bus::names::METHODS`.
++
++## Pioneer local runtime (fork contract 2.9)
++
++The Pioneer fork adds `pioneer_local` to Jev and planner providers. Its only
++plaintext origin is `http://10.88.0.1:12500`, with Jev at `/v1/systemone`
++and GLM at `/v1`. Tenant identity is the existing scoped key. Other private
++origins and hosted fallback are refused for this provider. Optional
++`browser.headless: false` launches the browser visibly on the tenant display.
++These are Pioneer modifications, not an upstream release.

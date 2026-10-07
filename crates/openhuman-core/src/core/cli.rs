@@ -23,7 +23,8 @@ const CLI_BANNER: &str = r#"
 ▝▚▄▞▘█                ▐▌ ▐▌
      ▀
 
-Contribute & Star us on GitHub: https://github.com/tinyhumansai/openhuman
+Pioneer runtime fork: https://github.com/coinmastersguild/openhuman
+Contributions and PRs target this fork only. Never open a PR upstream.
 
 "#;
 

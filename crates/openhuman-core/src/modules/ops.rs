@@ -179,6 +179,22 @@ async fn start_resolution(
 
 /// Do the actual work of getting `record` serving.
 async fn resolve(config: &Config, record: &'static ModuleRecord) -> Result<(), String> {
+    resolve_for_runtime_mode(
+        config,
+        record,
+        super::computer_config::pioneer_local_runtime(),
+    )
+    .await
+}
+
+async fn resolve_for_runtime_mode(
+    config: &Config,
+    record: &'static ModuleRecord,
+    pioneer: bool,
+) -> Result<(), String> {
+    if pioneer {
+        pioneer_admission(record.id, false)?;
+    }
     let runtime = host::runtime().await.map_err(|_| {
         format!(
             "module '{}' is unavailable: the module bus could not start",
@@ -186,14 +202,24 @@ async fn resolve(config: &Config, record: &'static ModuleRecord) -> Result<(), S
         )
     })?;
 
-    // Already serving — a module loaded from the search path at boot, or by an
-    // earlier explicit `modules.load_local`.
-    if runtime
+    let already_serving = runtime
         .host()
         .list()
         .iter()
-        .any(|info| info.manifest.bus_name.as_str() == record.bus_name)
-    {
+        .any(|info| info.manifest.bus_name.as_str() == record.bus_name);
+    // In Pioneer mode, a loaded flag alone is never evidence of the image pin.
+    // Other module overrides/search paths must not attach libraries first.
+    if pioneer {
+        pioneer_admission(record.id, already_serving)?;
+        let module_config = module_config(config, record.id);
+        return blocking(move || {
+            let path = Path::new("/opt/pioneer/lib/libtinycomputer.so");
+            verify_pioneer_artifact(path, option_env!("PIONEER_TINYCOMPUTER_SHA256"))?;
+            load_local(runtime, path, record.id, module_config)
+        })
+        .await;
+    }
+    if already_serving {
         return Ok(());
     }
 
@@ -256,6 +282,39 @@ async fn resolve(config: &Config, record: &'static ModuleRecord) -> Result<(), S
         }
         Err(reason) => Err(reason),
     }
+}
+
+/// Only image-pinned native code belongs in a Pioneer runtime process.
+fn pioneer_admission(id: &str, already_serving: bool) -> Result<(), String> {
+    if id != "tinycomputer" {
+        return Err(
+            "Pioneer local runtime permits only the image-pinned TinyComputer native module"
+                .to_owned(),
+        );
+    }
+    if already_serving {
+        return Err(
+            "Pioneer TinyComputer was preloaded without image-pin admission; restart the core"
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+
+fn verify_pioneer_artifact(path: &Path, expected: Option<&str>) -> Result<(), String> {
+    let expected = expected
+        .filter(|digest| digest.len() == 64 && digest.bytes().all(|b| b.is_ascii_hexdigit()))
+        .ok_or_else(|| "Pioneer TinyComputer artifact was not pinned at build time".to_owned())?;
+    let bytes =
+        std::fs::read(path).map_err(|_| "Pioneer TinyComputer artifact is missing".to_owned())?;
+    use sha2::{Digest, Sha256};
+    let actual = format!("{:x}", Sha256::digest(&bytes));
+    if actual != expected {
+        return Err(
+            "Pioneer TinyComputer artifact checksum does not match the build pin".to_owned(),
+        );
+    }
+    Ok(())
 }
 
 /// Run a blocking module operation on the blocking pool.

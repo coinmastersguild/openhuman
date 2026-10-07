@@ -1,0 +1,86 @@
+diff --git a/crates/tinyjevclient/src/client/mod.rs b/crates/tinyjevclient/src/client/mod.rs
+index c9a6c90..c6cfed2 100644
+--- a/crates/tinyjevclient/src/client/mod.rs
++++ b/crates/tinyjevclient/src/client/mod.rs
+@@ -9,7 +9,7 @@ pub use types::{Client, ClientConfig, EvaluationFailure, EvaluationResult, Provi
+ 
+ use std::time::{Duration, Instant};
+ 
+-use reqwest::{StatusCode, header::RETRY_AFTER};
++use reqwest::{header::RETRY_AFTER, StatusCode};
+ 
+ use crate::{Error, EvaluationRequest, EvaluationResponse, Result};
+ 
+@@ -175,7 +175,13 @@ impl ClientConfig {
+                 reason: "base URL must not contain a query or fragment".to_owned(),
+             });
+         }
++        // Pioneer modification (2026-10-07): scoped sandbox-to-host gateway.
++        // All other non-loopback HTTP origins remain refused.
++        let pioneer_gateway = url.host_str() == Some("10.88.0.1")
++            && url.port() == Some(12500)
++            && matches!(url.path(), "" | "/");
+         if url.scheme() == "http"
++            && !pioneer_gateway
+             && !url
+                 .host_str()
+                 .and_then(|host| {
+diff --git a/crates/tinyjevclient/src/client/test.rs b/crates/tinyjevclient/src/client/test.rs
+index 572fb1f..2d88eda 100644
+--- a/crates/tinyjevclient/src/client/test.rs
++++ b/crates/tinyjevclient/src/client/test.rs
+@@ -122,10 +122,9 @@ async fn sends_the_documented_endpoint_and_bearer_header() {
+     assert_eq!(result.response.usage.input_tokens, Some(12));
+     let sent = requests.lock().await.join("");
+     assert!(sent.starts_with("POST /v1/systemone HTTP/1.1"));
+-    assert!(
+-        sent.to_ascii_lowercase()
+-            .contains("authorization: bearer secret-test-key")
+-    );
++    assert!(sent
++        .to_ascii_lowercase()
++        .contains("authorization: bearer secret-test-key"));
+     assert!(sent.contains("\"model\":\"jev-latest\""));
+ }
+ 
+@@ -168,13 +167,11 @@ async fn tinyhumans_proxy_uses_the_direct_system_one_path() {
+         .evaluate(&request())
+         .await
+         .unwrap();
+-    assert!(
+-        requests
+-            .lock()
+-            .await
+-            .join("")
+-            .starts_with("POST /agent-integrations/openrouter/systemone HTTP/1.1")
+-    );
++    assert!(requests
++        .lock()
++        .await
++        .join("")
++        .starts_with("POST /agent-integrations/openrouter/systemone HTTP/1.1"));
+ }
+ 
+ #[tokio::test]
+@@ -458,3 +455,21 @@ async fn redirect_is_not_followed() {
+     assert!(matches!(failure.error, Error::HttpStatus { status: 307 }));
+     assert_eq!(requests.lock().await.len(), 1);
+ }
++
++#[test]
++fn pioneer_gateway_does_not_admit_other_plaintext_hosts() {
++    let mut own = ClientConfig::new("tenant-test-key");
++    own.base_url = "http://10.88.0.1:12500".into();
++    assert!(Client::new(own).is_ok());
++    for base in [
++        "http://10.88.0.2:12500",
++        "http://10.88.0.1:8016",
++        "http://10.88.0.1:12500/private",
++        "http://169.254.169.254",
++        "http://10.88.0.1:12500?token=x",
++    ] {
++        let mut config = ClientConfig::new("tenant-test-key");
++        config.base_url = base.into();
++        assert!(Client::new(config).is_err());
++    }
++}

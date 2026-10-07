@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 
+# The Pioneer fork never pushes to upstream or another repository.
+node scripts/pioneer/guard.mjs "${2:-}" || exit 1
+
 # Bail out immediately on Ctrl+C / SIGTERM.
 abort() {
   EXIT_CODE="$1"

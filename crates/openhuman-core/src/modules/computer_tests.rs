@@ -47,3 +47,12 @@ fn capabilities_report_compatibility() {
     assert!(view.rescue_configured);
     assert_eq!(view.surfaces.len(), 1);
 }
+
+#[test]
+fn pioneer_runtime_status_reports_native_local_planner_route() {
+    assert_eq!(
+        planner_route_for_provider(Some("pioneer_local")),
+        "pioneer_local"
+    );
+    assert_eq!(planner_route_for_provider(None), "unavailable");
+}

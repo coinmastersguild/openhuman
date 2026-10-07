@@ -58,6 +58,10 @@ tinyinference-local = { path = "vendor/tinyagents/vendor/tinyinference/crates/ti
 tinyinference-providers = { path = "vendor/tinyagents/vendor/tinyinference/crates/tinyinference-providers" }
 tinyinference-voice = { path = "vendor/tinyagents/vendor/tinyinference/crates/tinyinference-voice" }
 
+# Pioneer patch applies only to the pinned public client; never upstream writes.
+[patch."https://github.com/tinyhumansai/tinyjevclient"]
+tinyjevclient = { path = "vendor/pioneer-tinyjevclient/crates/tinyjevclient" }
+
 [patch.crates-io]
 tinyinference-core = { path = "vendor/tinyagents/vendor/tinyinference/crates/tinyinference-core" }
 tinyinference-embeddings = { path = "vendor/tinyagents/vendor/tinyinference/crates/tinyinference-embeddings" }

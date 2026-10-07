@@ -25,8 +25,8 @@ use crate::config::Config;
 /// down because an optional codec is missing would be a worse trade.
 pub async fn load_declared_modules(config: &Config) {
     super::memory::set_modules_policy(std::sync::Arc::new(config.clone()));
-    if !config.modules.enabled {
-        log::debug!("[modules] boot load skipped: modules are disabled in configuration");
+    if !generic_autoload_allowed(config, super::computer_config::pioneer_local_runtime()) {
+        log::debug!("[modules] boot load skipped: modules are disabled or Pioneer requires explicit image pins");
         return;
     }
 
@@ -97,6 +97,11 @@ pub async fn load_declared_modules(config: &Config) {
             crate::memory::auto_recall::warm::spawn_at_boot(std::sync::Arc::new(config.clone()));
         }
     }
+}
+
+/// Search paths and eager optional modules are not trusted image artifacts.
+fn generic_autoload_allowed(config: &Config, pioneer: bool) -> bool {
+    config.modules.enabled && !pioneer
 }
 
 /// Whether `record` should be loaded eagerly at boot, given `config`.

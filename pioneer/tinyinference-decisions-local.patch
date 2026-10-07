@@ -1,0 +1,44 @@
+diff --git a/crates/tinyinference-decisions/src/client/mod.rs b/crates/tinyinference-decisions/src/client/mod.rs
+index 1ed71cd..c5dc5cb 100644
+--- a/crates/tinyinference-decisions/src/client/mod.rs
++++ b/crates/tinyinference-decisions/src/client/mod.rs
+@@ -314,7 +314,13 @@ fn validate_url(value: &str, label: &str) -> Result<()> {
+             reason: format!("{label} must not contain a query or fragment"),
+         });
+     }
++    // Pioneer modification (2026-10-07): the sandbox's scoped gateway is
++    // the only allowed non-loopback plaintext origin; never any LAN host.
++    let pioneer_gateway = url.host_str() == Some("10.88.0.1")
++        && url.port() == Some(12500)
++        && matches!(url.path(), "" | "/" | "/v1/systemone");
+     if url.scheme() == "http"
++        && !pioneer_gateway
+         && !url
+             .host_str()
+             .and_then(|host| {
+diff --git a/crates/tinyinference-decisions/src/client/test.rs b/crates/tinyinference-decisions/src/client/test.rs
+index 9ae8074..42b9f81 100644
+--- a/crates/tinyinference-decisions/src/client/test.rs
++++ b/crates/tinyinference-decisions/src/client/test.rs
+@@ -634,3 +634,21 @@ async fn redirect_is_not_followed() {
+     ));
+     assert_eq!(requests.lock().await.len(), 1);
+ }
++
++#[test]
++fn pioneer_plaintext_gateway_is_exact_and_other_private_hosts_stay_denied() {
++    let config = ClientConfig::new("tenant-test-key")
++        .with_endpoint_url("http://10.88.0.1:12500/v1/systemone");
++    assert!(Client::new(config).is_ok());
++    for endpoint in [
++        "http://10.88.0.2:12500/v1/systemone",
++        "http://10.88.0.1:8016/v1/systemone",
++        "http://10.88.0.1:12500/not-systemone",
++        "http://169.254.169.254/v1/systemone",
++        "http://10.88.0.1:12500/v1/systemone?token=x",
++    ] {
++        assert!(
++            Client::new(ClientConfig::new("tenant-test-key").with_endpoint_url(endpoint)).is_err()
++        );
++    }
++}
