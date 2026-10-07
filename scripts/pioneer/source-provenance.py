@@ -40,6 +40,9 @@ def tree(repo, ref):
 
 def matches_bytes(repo, entries):
     # Compare raw files with Git blobs; clean filters/textconv cannot hide edits.
+    attributes = entries.get(".gitattributes")
+    public_crlf = bool(attributes and attributes[1] == b"blob" and
+                       b"*.ps1 text eol=crlf" in git(repo, "cat-file", "blob", attributes[2].decode()).splitlines())
     process = subprocess.Popen(["git", "-C", str(repo), "cat-file", "--batch"],
                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                stderr=subprocess.DEVNULL)
@@ -67,8 +70,15 @@ def matches_bytes(repo, entries):
                 return False
             size = int(header[2])
             content = process.stdout.read(size)
-            if process.stdout.read(1) != b"\n" or value != content:
+            if process.stdout.read(1) != b"\n":
                 return False
+            if value != content:
+                # The committed fork attributes explicitly request CRLF only
+                # for PowerShell. Admit that exact checkout transformation,
+                # never local attributes, clean filters or arbitrary changes.
+                if not (public_crlf and name.endswith(".ps1") and b"\r" not in content and
+                        value == content.replace(b"\n", b"\r\n")):
+                    return False
         return True
     finally:
         process.stdin.close()

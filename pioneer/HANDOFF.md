@@ -87,3 +87,6 @@ The first fresh checkout exposed the public PowerShell CRLF rule: Git checks
 scripts/install.ps1 out with CRLF although its canonical blob uses LF. A new
 failing regression requires this exact public checkout transformation to work,
 while undeclared source normalization and arbitrary clean filters stay refused.
+The verifier now permits only the literal committed `*.ps1 text eol=crlf` rule
+and an exact LF-to-CRLF substitution for those files. Other bytes and file modes
+must match; no local attribute configuration or filter is trusted.
