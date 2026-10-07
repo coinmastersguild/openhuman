@@ -37,6 +37,12 @@ search uses a local BM25 shortlist followed by a Pioneer Analytic choice; it
 needs no hosted embedding provider. The existing harness BM25 fallback remains
 available when analytics is unavailable.
 
+If this runtime's local gateway returns `402` with `token budget exhausted`,
+chat asks the owner to top up that agent in Pioneer Studio. This is the agent's
+prepaid inference budget, not a TinyHumans cloud plan or a reason to change its
+model/API key. The same failed turn is not automatically retried. Generic local
+packages and unrelated provider failures keep their existing guidance.
+
 `pioneer/tinycomputer-local.patch` modifies only the pinned public TinyComputer
 source at `16446e009c3c2158e5a1bfec24b041d547776e30`: it adds exact local provider
 routes, keeps unrelated destinations rejected, and makes the browser visible on

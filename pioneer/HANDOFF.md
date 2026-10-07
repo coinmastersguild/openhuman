@@ -90,3 +90,18 @@ while undeclared source normalization and arbitrary clean filters stay refused.
 The verifier now permits only the literal committed `*.ps1 text eol=crlf` rule
 and an exact LF-to-CRLF substitution for those files. Other bytes and file modes
 must match; no local attribute configuration or filter is trusted.
+
+## Local gateway budget guidance
+
+The local package is released as `pioneer-local-v0.1.0` at source `93766c3f`;
+the template now pins its public archive SHA256. Its clean Linux build and
+network-disabled hardened Docker tool-turn smoke passed. No native desktop
+module is included in that generic package.
+
+A later hosted desktop test exhausted the agent's own prepaid token budget.
+The request reached its local gateway, but upstream chat copy called it a
+managed cloud plan limit. Tests now require Pioneer Studio top-up guidance only
+when trusted Pioneer image mode and the exact `402 token budget exhausted`
+signal coincide. Auth/rate limits and generic/BYOK failures retain their prior
+classification. This change is source preparation; the deployed pinned runtime
+is not rebuilt or replaced by these edits.
