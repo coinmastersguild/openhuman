@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -97,5 +97,25 @@ test('rejects an ignored source input while allowing generated target output', (
 test('post-apply verification requires the complete published overlay, not a clean substitute', () => {
   const f = fixture(); try {
     const r = f.check('after'); assert.notEqual(r.status, 0); assert.match(r.stderr, /overlay/i);
+  } finally { f.cleanup(); }
+});
+
+test('raw byte comparison rejects a private edit hidden by a Git clean filter', () => {
+  const f = fixture(); try {
+    const sub = join(f.root, 'vendor/tinyagents');
+    writeFileSync(join(sub, '.git/info/attributes'), 'src/lib.rs filter=public-normalize\n');
+    f.git(sub, 'config', 'filter.public-normalize.clean', "sed 's/private_value/value/'");
+    writeFileSync(join(sub, 'src/lib.rs'), 'pub fn private_value() -> u8 { 1 }\n');
+    // The old git-diff-based admission accepts this exact working-tree attack.
+    f.git(sub, 'diff', '--quiet', 'HEAD');
+    const r = f.check(); assert.notEqual(r.status, 0); assert.match(r.stderr, /tracked|overlay/i);
+  } finally { f.cleanup(); }
+});
+
+test('rejects a staged gitlink change even if the dependency working HEAD is correct', () => {
+  const f = fixture(); try {
+    const other = f.git(join(f.root, 'vendor/tinycomputer'), 'rev-parse', 'HEAD').trim();
+    f.git(f.root, 'update-index', '--cacheinfo', `160000,${other},vendor/tinyagents`);
+    const r = f.check(); assert.notEqual(r.status, 0); assert.match(r.stderr, /staged|tracked/i);
   } finally { f.cleanup(); }
 });

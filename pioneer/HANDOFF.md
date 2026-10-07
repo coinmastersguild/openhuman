@@ -77,4 +77,8 @@ Package review found a source-provenance gap: unrelated tracked vendor edits or
 wrong recursive gitlink revisions could enter the generic binary. New failing
 acceptance tests require exact recursive pins, only the three committed overlays,
 and rejection of untracked or ignored compiler inputs before a public build.
-The package remains unpublished while this regression is fixed and reviewed.
+The builder now verifies these boundaries before and after patch application. It
+compares raw source bytes with public Git blobs, so Git clean filters cannot hide
+an edit. An isolated temporary index derives the exact approved overlay tree;
+the actual source/index remain untouched. Packaging remains unpublished pending
+independent review and a fresh Linux build receipt.

@@ -82,5 +82,9 @@ It is not the trusted tenant build and makes no local full-desktop claim.
 
 Only a reviewed fork release may publish the explicit core/license/receipt
 archive. The template must pin both its fork release URL and archive SHA256.
+The package builder requires every recursive dependency at its recorded public
+gitlink, with only the three committed patch overlays. It compares actual file
+bytes to the public trees before and after patching, and rejects extra tracked,
+untracked or ignored compiler inputs. Generated build outputs are not packaged.
 Initial packages target Linux amd64; Apple Silicon uses Docker amd64 emulation.
 Native arm64 packages will require their own tested build and receipt.

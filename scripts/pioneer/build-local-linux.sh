@@ -7,10 +7,12 @@ version="${1:-}"
 [[ "$version" =~ ^pioneer-local-v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'A pioneer-local-vN.N.N version is required' >&2; exit 1; }
 [[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] || { echo 'Local package currently supports Linux amd64 only' >&2; exit 1; }
 git diff --quiet --ignore-submodules=all HEAD || { echo 'Package requires clean committed tracked source' >&2; exit 1; }
+python3 scripts/pioneer/source-provenance.py "$root" before
 # A local package must not inherit the Beast-only compiled trust/routing switch.
 unset PIONEER_TINYCOMPUTER_SHA256 PIONEER_LOCAL_RUNTIME
 export RUSTUP_TOOLCHAIN=1.96.1
 scripts/pioneer/apply-patches.sh
+python3 scripts/pioneer/source-provenance.py "$root" after
 features=bin-tools,http-server,mcp,skills,flows,scheduler-gate
 cargo build --locked --release --jobs "${PIONEER_BUILD_JOBS:-8}" -p openhuman-cli --bin openhuman-core --no-default-features --features "$features"
 output="$root/pioneer/local-artifacts"
