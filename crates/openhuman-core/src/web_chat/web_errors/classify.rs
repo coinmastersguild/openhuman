@@ -74,6 +74,16 @@ pub(crate) struct ClassifiedError {
 }
 
 pub(crate) fn classify_inference_error(err: &str) -> ClassifiedError {
+    // Use the same trusted image boundary as native local inference. A generic
+    // offline session alone does not establish a Pioneer metered runtime.
+    #[cfg(feature = "modules")]
+    let pioneer_runtime = crate::modules::computer_config::pioneer_local_runtime();
+    #[cfg(not(feature = "modules"))]
+    let pioneer_runtime = false;
+    classify_inference_error_for_runtime(err, pioneer_runtime)
+}
+
+fn classify_inference_error_for_runtime(err: &str, pioneer_runtime: bool) -> ClassifiedError {
     let lower = err.to_lowercase();
     let provider = extract_provider_name(err);
     let fallback_available = if is_fallback_chain_exhausted(err) {
@@ -362,13 +372,30 @@ pub(crate) fn classify_inference_error(err: &str) -> ClassifiedError {
         // practice). When the 402 comes from an upstream provider envelope
         // (`<provider> API error (402)`), the limit belongs to that
         // provider, not OpenHuman billing, so tag the source as `provider`.
-        let source: &'static str = match provider.as_deref() {
-            Some("openhuman") | None => "openhuman_billing",
-            Some(_) => "provider",
+        // The tenant gateway rejects an exhausted prepaid token budget before
+        // reaching the model. It is neither a TinyHumans plan limit nor a request
+        // to change provider credentials. Preserve generic/BYOK behavior unless
+        // both trusted Pioneer mode and the exact gateway signal are present.
+        let pioneer_budget = pioneer_runtime
+            && (lower.contains("402") || lower.contains("payment required"))
+            && lower.contains("token budget exhausted");
+        let source: &'static str = if pioneer_budget {
+            "provider"
+        } else {
+            match provider.as_deref() {
+                Some("openhuman") | None => "openhuman_billing",
+                Some(_) => "provider",
+            }
+        };
+        let summary = if pioneer_budget {
+            "You need to top up this Pioneer agent's inference token budget in Pioneer Studio \
+             before it can continue. Inference uses Pioneer's local gateway."
+        } else {
+            inference_budget_exceeded_user_message()
         };
         ClassifiedError {
             error_type: "budget_exhausted",
-            message: with_provider_detail(inference_budget_exceeded_user_message(), err),
+            message: with_provider_detail(summary, err),
             source,
             retryable: false,
             retry_after_ms: None,
