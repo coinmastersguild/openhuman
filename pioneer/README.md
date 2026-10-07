@@ -14,6 +14,13 @@ merge rights, organization-wide access or access to private Pioneer repositories
 A runtime release requires owner approval, passing CI and a pinned build receipt.
 No tenant credentials, private control-plane code or tenant data belong here.
 
+Hosted project grants remain read-only and limited to one personal project
+repository. Autonomous runtime PR submission is not implemented. The planned
+flow is a runtime-authored patch followed by an Alpha owner-approved write
+executor, targeting only **coinmastersguild/openhuman**. It must never target
+private Pioneer repositories, other organization repositories or upstream.
+The tenant receives no write credential.
+
 ## Local inference
 
 The trusted host sets `PIONEER_LOCAL_RUNTIME=1` and supplies the tenant's scoped
