@@ -68,3 +68,7 @@ A fork-owned release and a template archive SHA256 pin are still pending review
 and a real clean Linux build. No host configuration, tenant state or private
 image is eligible for packaging. Native desktop integration remains the separate
 Pioneer host flavor; the local package makes no desktop/Blender claim.
+
+The contribution documentation now states that autonomous runtime PR submission
+is unimplemented; future writes require Alpha owner approval and target only the
+public fork. Hosted project grants remain read-only for one personal repository.
