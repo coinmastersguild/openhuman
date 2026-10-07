@@ -72,3 +72,9 @@ Pioneer host flavor; the local package makes no desktop/Blender claim.
 The contribution documentation now states that autonomous runtime PR submission
 is unimplemented; future writes require Alpha owner approval and target only the
 public fork. Hosted project grants remain read-only for one personal repository.
+
+Package review found a source-provenance gap: unrelated tracked vendor edits or
+wrong recursive gitlink revisions could enter the generic binary. New failing
+acceptance tests require exact recursive pins, only the three committed overlays,
+and rejection of untracked or ignored compiler inputs before a public build.
+The package remains unpublished while this regression is fixed and reviewed.
