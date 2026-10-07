@@ -642,7 +642,7 @@ mod pioneer_budget_tests {
         for provider in ["custom_openai", "pioneer_local"] {
             let raw = format!(
                 "{provider} API error (402 Payment Required): \
-                 {{\"error\":{{\"message\":\"token budget exhausted\"}}}}"
+                 {{\"error\":{{\"message\":\"token budget exhausted\",\"type\":\"gateway_error\"}}}}"
             );
             let value = classify_inference_error_for_runtime(&raw, true);
             assert_eq!(value.error_type, "budget_exhausted");
@@ -654,8 +654,19 @@ mod pioneer_budget_tests {
             assert!(value.message.contains("local"));
             assert!(value.message.contains("top up"));
             let lower = value.message.to_ascii_lowercase();
-            for misleading in ["cloud", "managed", "plan", "tinyhumans", "use your own models", "api key"] {
-                assert!(!lower.contains(misleading), "{misleading}: {}", value.message);
+            for misleading in [
+                "cloud",
+                "managed",
+                "plan",
+                "tinyhumans",
+                "use your own models",
+                "api key",
+            ] {
+                assert!(
+                    !lower.contains(misleading),
+                    "{misleading}: {}",
+                    value.message
+                );
             }
         }
     }
@@ -672,7 +683,11 @@ mod pioneer_budget_tests {
             "custom_openai API error (429 Too Many Requests): token budget exhausted",
         ] {
             let value = classify_inference_error_for_runtime(raw, true);
-            assert!(!value.message.contains("Pioneer Studio"), "{raw}: {}", value.message);
+            assert!(
+                !value.message.contains("Pioneer Studio"),
+                "{raw}: {}",
+                value.message
+            );
         }
     }
 }
