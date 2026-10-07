@@ -119,3 +119,17 @@ test('rejects a staged gitlink change even if the dependency working HEAD is cor
     const r = f.check(); assert.notEqual(r.status, 0); assert.match(r.stderr, /staged|tracked/i);
   } finally { f.cleanup(); }
 });
+
+test('accepts only the public PowerShell CRLF checkout rule, not undeclared source normalization', () => {
+  const f = fixture(); try {
+    mkdirSync(join(f.root, 'scripts'));
+    writeFileSync(join(f.root, '.gitattributes'), '*.ps1 text eol=crlf\n');
+    writeFileSync(join(f.root, 'scripts/install.ps1'), 'Write-Output public\n');
+    f.git(f.root, 'add', '.gitattributes', 'scripts/install.ps1'); f.git(f.root, 'commit', '-qm', 'public CRLF checkout rule');
+    writeFileSync(join(f.root, 'scripts/install.ps1'), 'Write-Output public\r\n');
+    f.git(f.root, 'diff', '--quiet', 'HEAD');
+    assert.equal(f.check().status, 0, f.check().stderr);
+    writeFileSync(join(f.root, 'src/lib.rs'), 'pub fn value() -> u8 { 1 }\r\n');
+    const r = f.check(); assert.notEqual(r.status, 0); assert.match(r.stderr, /tracked|overlay/i);
+  } finally { f.cleanup(); }
+});

@@ -82,3 +82,8 @@ compares raw source bytes with public Git blobs, so Git clean filters cannot hid
 an edit. An isolated temporary index derives the exact approved overlay tree;
 the actual source/index remain untouched. Packaging remains unpublished pending
 independent review and a fresh Linux build receipt.
+
+The first fresh checkout exposed the public PowerShell CRLF rule: Git checks
+scripts/install.ps1 out with CRLF although its canonical blob uses LF. A new
+failing regression requires this exact public checkout transformation to work,
+while undeclared source normalization and arbitrary clean filters stay refused.
