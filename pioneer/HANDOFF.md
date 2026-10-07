@@ -53,12 +53,18 @@ unknown preloaded TinyComputer and other native module IDs are refused. MCP
 and shell tools are unaffected. This closes the independently found admission
 bypass rather than relying on a clean environment alone.
 
-## Local fork package (preparation)
+## Local fork package
 
-A separate generic Linux amd64 core package is being prepared for the public agent
- template. It uses this fork, an offline local session and the user's MODEL_*
-settings. It carries no Pioneer tenant compile pin or native desktop module and
-must never replace the trusted Beast artifact. Four package acceptance tests are
-committed first and currently fail because the builder does not exist. The
-release will include only its core, GPL license and public build/source receipt;
-no host configuration, tenant state or private image is eligible for packaging.
+A separate generic Linux amd64 core package now has a tracked build script,
+`scripts/pioneer/build-local-linux.sh pioneer-local-v0.1.0`. It clears both
+Pioneer-only compile/runtime switches, applies the exact public source patches,
+and builds the offline chat/MCP/scheduler feature set without native modules
+or a hosted decision ranker. It must never replace the compile-pinned Beast
+artifact. Five packaging gates prove switch clearing, explicit payload allowlist,
+clean tracked source, amd64-only output and valid version names.
+
+The package carries only its core, GPL license and public build/source receipt.
+A fork-owned release and a template archive SHA256 pin are still pending review
+and a real clean Linux build. No host configuration, tenant state or private
+image is eligible for packaging. Native desktop integration remains the separate
+Pioneer host flavor; the local package makes no desktop/Blender claim.
