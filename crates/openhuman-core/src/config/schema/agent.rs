@@ -262,13 +262,13 @@ pub struct AgentConfig {
     #[serde(default = "default_max_parallel_tools")]
     pub max_parallel_tools: usize,
     /// How the agent formats tool calls to its provider.
-    /// - `"python"` (default): code-style calls against Python signatures in
+    /// - `"python"` (generic developer default): code-style calls against Python signatures in
     ///   the prompt (`def read_file(path: str, limit: int = None) -> str`,
     ///   called as `read_file(path="x")`). The cheapest catalogue on the wire
     ///   and a syntax every code-trained model already writes.
     /// - `"auto"`: native structured tool-calling when the provider supports
     ///   it, otherwise JSON-in-tag (`<tool_call>{…}</tool_call>`).
-    /// - `"native"`: force provider-native structured tool calls.
+    /// - `"native"` (Pioneer image default): force provider-native structured tool calls.
     /// - `"xml"`: force JSON-in-tag.
     /// - `"pformat"`: force compact positional P-Format (`tool[a|b]`); it
     ///   mis-parses on some models.
@@ -491,7 +491,17 @@ fn default_max_parallel_tools() -> usize {
 }
 
 fn default_agent_tool_dispatcher() -> String {
-    "python".into()
+    default_tool_dispatcher_for_image_pin(option_env!("PIONEER_TINYCOMPUTER_SHA256").is_some())
+        .into()
+}
+
+fn default_tool_dispatcher_for_image_pin(pioneer_image: bool) -> &'static str {
+    // The pinned Pioneer image targets the local GLM OpenAI tool API. Python
+    // dialect removes all native schemas before transport, which prevents that
+    // API from returning structured tool calls. Unpinned developer builds keep
+    // their upstream default; trusted image ENV also selects native to cover
+    // existing persisted configurations.
+    if pioneer_image { "native" } else { "python" }
 }
 
 fn default_max_memory_context_chars() -> usize {
@@ -612,3 +622,7 @@ impl Default for AgentConfig {
 #[cfg(test)]
 #[path = "agent_memory_window_tests_tests.rs"]
 mod memory_window_tests;
+
+#[cfg(test)]
+#[path = "agent_pioneer_tests.rs"]
+mod pioneer_tests;

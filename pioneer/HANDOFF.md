@@ -42,6 +42,12 @@ successful application/tool test. Source tests and a screenshot alone cannot
 claim these live integration gates passed.
 
 Pioneer tenant builds force native local mode through the compiled image pin.
+Their default tool dispatcher is native, matching GLM's structured tool API.
+Set trusted image ENV OPENHUMAN_TOOL_DISPATCHER=native as well: the default alone
+does not overwrite a saved Python dispatcher. The trusted supervisor merges
+image environment over decrypted user assignments. Generic developer builds
+retain Python as the upstream default. This is a model compatibility setting,
+not an integrity claim against arbitrary programs the same tenant can launch.
 Generic module search paths, overrides and eager optional modules are disabled;
 unknown preloaded TinyComputer and other native module IDs are refused. MCP
 and shell tools are unaffected. This closes the independently found admission
