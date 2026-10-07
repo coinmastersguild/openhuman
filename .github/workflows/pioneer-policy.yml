@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node --test scripts/pioneer/guard.test.mjs
+      - run: node --test scripts/pioneer/guard.test.mjs scripts/pioneer/workflow-boundary.test.mjs
       - name: Verify fork contribution boundary
         run: |
           node scripts/pioneer/guard.mjs https://github.com/coinmastersguild/openhuman.git

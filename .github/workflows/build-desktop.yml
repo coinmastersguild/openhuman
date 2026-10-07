@@ -94,8 +94,10 @@ on:
           signing time and pollutes the artifact tree.
         type: boolean
         default: true
+# Pioneer fork: inherited publishers are upstream-only and cannot run here.
 jobs:
   build:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: "Desktop: ${{ matrix.settings.artifact_suffix }}"
     runs-on: ${{ matrix.settings.platform }}
     # 120, not 90: the macOS legs were clipped at exactly 90m in every failing

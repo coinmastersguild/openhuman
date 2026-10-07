@@ -53,6 +53,7 @@ concurrency:
 # `.github/workflows/build-desktop.yml` and is shared with
 # release-production.yml.
 # ---------------------------------------------------------------------------
+# Pioneer fork: inherited publishers are upstream-only and cannot run here.
 jobs:
   # =========================================================================
   # Phase 1: Patch-bump on `release` and optionally create the immutable
@@ -60,6 +61,7 @@ jobs:
   # checks out the tag (not release HEAD) so reruns reproduce byte-for-byte.
   # =========================================================================
   prepare-build:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Prepare build context
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -241,7 +243,7 @@ jobs:
   build-desktop:
     name: Build desktop matrix
     needs: [prepare-build]
-    if: inputs.create_tag
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (inputs.create_tag) }}
     uses: ./.github/workflows/build-desktop.yml
     secrets: inherit
     with:
@@ -283,7 +285,7 @@ jobs:
   build-docker:
     name: "Docker: build (no push)"
     needs: [prepare-build]
-    if: inputs.create_tag
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (inputs.create_tag) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: Production
@@ -346,7 +348,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: Production
-    if: inputs.create_tag
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (inputs.create_tag) }}
     needs: [prepare-build, build-desktop, build-docker]
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -389,12 +391,7 @@ jobs:
     timeout-minutes: 10
     environment: Production
     needs: [prepare-build, build-desktop, build-docker]
-    if: >-
-      always()
-      && inputs.create_tag
-      && needs.prepare-build.result == 'success'
-      && (needs.build-desktop.result == 'failure' || needs.build-desktop.result == 'cancelled'
-          || needs.build-docker.result == 'failure' || needs.build-docker.result == 'cancelled')
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (always() && inputs.create_tag && needs.prepare-build.result == 'success' && (needs.build-desktop.result == 'failure' || needs.build-desktop.result == 'cancelled' || needs.build-docker.result == 'failure' || needs.build-docker.result == 'cancelled')) }}
     steps:
       - name: Delete remote staging tag
         uses: actions/github-script@v9

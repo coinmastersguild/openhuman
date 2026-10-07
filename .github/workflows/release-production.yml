@@ -67,6 +67,7 @@ concurrency:
 # The actual desktop build / sign / Sentry / artifact-upload pipeline lives in
 # `.github/workflows/build-desktop.yml` and is shared with release-staging.yml.
 # ---------------------------------------------------------------------------
+# Pioneer fork: inherited publishers are upstream-only and cannot run here.
 jobs:
   # =========================================================================
   # Phase 0: Manual approval gate.
@@ -80,6 +81,7 @@ jobs:
   # approve before prepare-build is allowed to run its push step.
   # =========================================================================
   review-approval:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Manual approval gate
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -94,6 +96,7 @@ jobs:
   # Phase 1: Bump version on release, commit, push, and optionally tag
   # =========================================================================
   prepare-build:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Prepare build context
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -243,6 +246,7 @@ jobs:
   # Phase 2: Create draft GitHub release
   # =========================================================================
   create-release:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Prepare GitHub release
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -342,7 +346,7 @@ jobs:
   build-desktop:
     name: Build desktop matrix
     needs: [prepare-build, create-release]
-    if: always() && needs.create-release.result == 'success'
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (always() && needs.create-release.result == 'success') }}
     uses: ./.github/workflows/build-desktop.yml
     secrets: inherit
     with:
@@ -387,7 +391,7 @@ jobs:
   build-docker:
     name: "Docker: build and push"
     needs: [prepare-build, create-release]
-    if: always() && needs.create-release.result == 'success'
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (always() && needs.create-release.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: Production
@@ -479,7 +483,7 @@ jobs:
   build-cli-linux:
     name: "CLI: ${{ matrix.target }}"
     needs: [prepare-build, create-release]
-    if: ${{ inputs.create_release && always() && needs.create-release.result == 'success' }}
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (inputs.create_release && always() && needs.create-release.result == 'success') }}
     timeout-minutes: 60
     environment: Production
     runs-on: ${{ matrix.runner }}
@@ -555,7 +559,7 @@ jobs:
   publish-updater-manifest:
     name: Publish updater manifest (latest.json)
     needs: [prepare-build, create-release, build-desktop]
-    if: ${{ inputs.create_release && always() && needs.build-desktop.result == 'success' }}
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (inputs.create_release && always() && needs.build-desktop.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: Production
@@ -589,14 +593,7 @@ jobs:
       - build-cli-linux
       - build-docker
       - publish-updater-manifest
-    if: >-
-      inputs.create_release
-      && 
-      always()
-      && needs.build-desktop.result == 'success'
-      && needs.build-cli-linux.result == 'success'
-      && needs.build-docker.result == 'success'
-      && needs.publish-updater-manifest.result == 'success'
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (inputs.create_release && always() && needs.build-desktop.result == 'success' && needs.build-cli-linux.result == 'success' && needs.build-docker.result == 'success' && needs.publish-updater-manifest.result == 'success') }}
     steps:
       - name: Checkout validation scripts
         uses: actions/checkout@v7
@@ -700,7 +697,7 @@ jobs:
     timeout-minutes: 60
     environment: Production
     needs: [prepare-build, publish-release]
-    if: ${{ inputs.create_release && always() && needs.publish-release.result == 'success' }}
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (inputs.create_release && always() && needs.publish-release.result == 'success') }}
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: tinyhumansai/openhuman-core
@@ -737,7 +734,7 @@ jobs:
     timeout-minutes: 60
     environment: Production
     needs: [prepare-build, publish-release]
-    if: ${{ inputs.create_release && always() && needs.publish-release.result == 'success' }}
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (inputs.create_release && always() && needs.publish-release.result == 'success') }}
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SENTRY_URL: ${{ vars.SENTRY_URL }}
@@ -782,15 +779,7 @@ jobs:
       - build-cli-linux
       - build-docker
       - publish-updater-manifest
-    if: >-
-      always()
-      && inputs.create_release
-      && needs.prepare-build.result == 'success'
-      && needs.create-release.result == 'success'
-      && (needs.build-desktop.result == 'failure' || needs.build-desktop.result == 'cancelled'
-          || needs.build-cli-linux.result == 'failure' || needs.build-cli-linux.result == 'cancelled'
-          || needs.build-docker.result == 'failure' || needs.build-docker.result == 'cancelled'
-          || needs.publish-updater-manifest.result == 'failure' || needs.publish-updater-manifest.result == 'cancelled')
+    if: ${{ github.repository == 'tinyhumansai/openhuman' && (always() && inputs.create_release && needs.prepare-build.result == 'success' && needs.create-release.result == 'success' && (needs.build-desktop.result == 'failure' || needs.build-desktop.result == 'cancelled' || needs.build-cli-linux.result == 'failure' || needs.build-cli-linux.result == 'cancelled' || needs.build-docker.result == 'failure' || needs.build-docker.result == 'cancelled' || needs.publish-updater-manifest.result == 'failure' || needs.publish-updater-manifest.result == 'cancelled')) }}
     steps:
       - name: Delete GitHub release
         if: ${{ inputs.create_release && needs.create-release.result == 'success' }}

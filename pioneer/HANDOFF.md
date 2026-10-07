@@ -23,9 +23,10 @@ feature set; voice, media capture and web3 features are outside this build.
 
 Verified on the build host: 591 native module/contract/engine unit and API
 tests, 35 native doctests, 52 decisions-client tests plus API and doctest,
-and 35 tinyjev-client tests plus API and doctest. All passed. The two initial
-host routing tests and two contribution guard tests passed. Final host status
-regression and clean pinned Linux release rebuild complete before image use.
+and 35 tinyjev-client tests plus API and doctest. All passed. All three host routing/status regressions and contribution guards passed.
+Inherited upstream release publishers are explicitly disabled in this fork,
+with a regression guard. The clean pinned Linux release rebuild completes
+before image use.
 Before integration, rerun host configuration tests and the Linux build script.
 The build receipt records source pins, dependency patch hashes and artifacts.
 No script installs an image, restarts services or deploys a runtime.

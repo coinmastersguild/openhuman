@@ -22,8 +22,10 @@ permissions:
 concurrency:
   group: build-ci-image
   cancel-in-progress: false
+# Pioneer fork: inherited publishers are upstream-only and cannot run here.
 jobs:
   build-image:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Build and push CI image
     runs-on: ubuntu-latest
     timeout-minutes: 30

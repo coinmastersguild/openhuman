@@ -24,6 +24,7 @@ permissions:
 concurrency:
   group: release-packages-${{ github.event.release.tag_name }}
   cancel-in-progress: false
+# Pioneer fork: inherited publishers are upstream-only and cannot run here.
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
   # 1. Build Linux arm64 CLI tarball (native runner)
@@ -33,6 +34,7 @@ jobs:
   #    `cross build --target aarch64-unknown-linux-gnu` instead of plain cargo.
   # ────────────────────────────────────────────────────────────────────────────
   build-cli-linux-arm64:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Build Linux arm64 CLI tarball
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
@@ -98,6 +100,7 @@ jobs:
   #    on tinyhumansai/homebrew-openhuman)
   # ────────────────────────────────────────────────────────────────────────────
   update-homebrew:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Update Homebrew tap formula
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -130,6 +133,7 @@ jobs:
   #    GitHub Pages must be enabled (Settings → Pages → Source: gh-pages branch)
   # ────────────────────────────────────────────────────────────────────────────
   build-apt-repo:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Build apt repository
     runs-on: ubuntu-22.04
     timeout-minutes: 15
@@ -171,6 +175,7 @@ jobs:
   #    Requires secret: NPM_TOKEN (automation token from npmjs.com)
   # ────────────────────────────────────────────────────────────────────────────
   publish-npm:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Publish npm package
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -199,6 +204,7 @@ jobs:
   # 5. Smoke test: Homebrew
   # ────────────────────────────────────────────────────────────────────────────
   smoke-homebrew:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Smoke — Homebrew (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -225,6 +231,7 @@ jobs:
   # 6. Smoke test: apt
   # ────────────────────────────────────────────────────────────────────────────
   smoke-apt:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Smoke — apt (ubuntu-22.04)
     runs-on: ubuntu-22.04
     timeout-minutes: 10
@@ -249,6 +256,7 @@ jobs:
   # 7. Smoke test: npm
   # ────────────────────────────────────────────────────────────────────────────
   smoke-npm:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Smoke — npm (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -278,6 +286,7 @@ jobs:
   # 8. File the "future package managers" backlog issue (once ever)
   # ────────────────────────────────────────────────────────────────────────────
   create-backlog-issue:
+    if: github.repository == 'tinyhumansai/openhuman'
     name: Create backlog issue (once)
     runs-on: ubuntu-latest
     timeout-minutes: 5
