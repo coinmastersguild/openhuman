@@ -132,3 +132,15 @@ fn pioneer_runtime_without_scoped_key_never_uses_hosted_fallback() {
     assert_eq!(pioneer_config(&config, None), json!({}));
     assert_eq!(pioneer_config(&config, Some("  ")), json!({}));
 }
+
+#[test]
+fn pioneer_runtime_image_pin_cannot_be_disabled_by_user_environment() {
+    assert!(pioneer_mode_from_switch(Some("packaged-pin"), Some("0")));
+    assert!(pioneer_mode_from_switch(
+        Some("packaged-pin"),
+        Some("false")
+    ));
+    assert!(pioneer_mode_from_switch(Some("packaged-pin"), None));
+    assert!(!pioneer_mode_from_switch(None, Some("0")));
+    assert!(pioneer_mode_from_switch(None, Some("1")));
+}

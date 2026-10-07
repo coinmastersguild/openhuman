@@ -114,10 +114,11 @@ impl TinyHumansJevRanker {
             .map_err(|error| RankError::Backend {
                 reason: format!("config unavailable: {error}"),
             })?;
-        let local = matches!(
-            std::env::var("PIONEER_LOCAL_RUNTIME").as_deref(),
-            Ok("1" | "true")
-        );
+        let local = option_env!("PIONEER_TINYCOMPUTER_SHA256").is_some()
+            || matches!(
+                std::env::var("PIONEER_LOCAL_RUNTIME").as_deref(),
+                Ok("1" | "true")
+            );
         let (secret, base_url) = if local {
             let secret = std::env::var("MODEL_API_KEY")
                 .ok()

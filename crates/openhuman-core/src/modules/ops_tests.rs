@@ -345,3 +345,44 @@ fn load_errors_render_for_callers_that_cannot_wait_again() {
     let message = ops::LoadError::StillLoading.into_message();
     assert!(message.contains("still loading"), "{message}");
 }
+
+#[test]
+fn pioneer_runtime_rejects_preloaded_and_unpinned_native_code() {
+    assert!(ops::pioneer_admission("tinycomputer", false).is_ok());
+    assert!(ops::pioneer_admission("tinycomputer", true)
+        .unwrap_err()
+        .contains("preloaded"));
+    assert!(ops::pioneer_admission("tinydocs", false).is_err());
+    let dir = tempfile::tempdir().unwrap();
+    let wrong = dir.path().join("libtinycomputer.so");
+    std::fs::write(&wrong, b"untrusted search-path artifact").unwrap();
+    assert!(ops::verify_pioneer_artifact(&wrong, Some(&"0".repeat(64)))
+        .unwrap_err()
+        .contains("checksum"));
+    assert!(ops::verify_pioneer_artifact(&wrong, None)
+        .unwrap_err()
+        .contains("not pinned"));
+}
+
+#[tokio::test]
+async fn pioneer_runtime_refuses_other_module_overrides_before_loading() {
+    let mut config = offline_config();
+    let dir = tempfile::tempdir().unwrap();
+    let wrong = dir.path().join("libtinycomputer.so");
+    std::fs::write(&wrong, b"untrusted library masquerading as another module").unwrap();
+    config
+        .modules
+        .overrides
+        .push(crate::config::schema::ModuleOverride {
+            id: "tinydocs".to_owned(),
+            path: wrong.to_string_lossy().into_owned(),
+        });
+    let record = registry::find("tinydocs").unwrap();
+    let reason = ops::resolve_for_runtime_mode(&config, record, true)
+        .await
+        .unwrap_err();
+    assert!(
+        reason.contains("only the image-pinned TinyComputer"),
+        "{reason}"
+    );
+}

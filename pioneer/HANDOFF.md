@@ -23,7 +23,7 @@ feature set; voice, media capture and web3 features are outside this build.
 
 Verified on the build host: 591 native module/contract/engine unit and API
 tests, 35 native doctests, 52 decisions-client tests plus API and doctest,
-and 35 tinyjev-client tests plus API and doctest. All passed. All three host routing/status regressions and contribution guards passed.
+and 35 tinyjev-client tests plus API and doctest. All passed. All host routing/status and native admission regressions and contribution guards passed.
 Inherited upstream release publishers are explicitly disabled in this fork,
 with a regression guard. The clean pinned Linux release rebuild completes
 before image use.
@@ -40,3 +40,9 @@ Vision support of the deployed model and Clef image decisions are unverified;
 there is no external fallback if either is unsupported. Blender needs its own
 successful application/tool test. Source tests and a screenshot alone cannot
 claim these live integration gates passed.
+
+Pioneer tenant builds force native local mode through the compiled image pin.
+Generic module search paths, overrides and eager optional modules are disabled;
+unknown preloaded TinyComputer and other native module IDs are refused. MCP
+and shell tools are unaffected. This closes the independently found admission
+bypass rather than relying on a clean environment alone.

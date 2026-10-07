@@ -16,10 +16,17 @@ use crate::config::{Config, DecisionModel};
 
 /// Trusted host switch. Agent config cannot change the fixed local routes.
 pub(crate) fn pioneer_local_runtime() -> bool {
-    matches!(
-        std::env::var("PIONEER_LOCAL_RUNTIME").as_deref(),
-        Ok("1" | "true")
+    pioneer_mode_from_switch(
+        option_env!("PIONEER_TINYCOMPUTER_SHA256"),
+        std::env::var("PIONEER_LOCAL_RUNTIME").ok().as_deref(),
     )
+}
+
+fn pioneer_mode_from_switch(image_pin: Option<&str>, switch: Option<&str>) -> bool {
+    // A packaged Pioneer tenant build cannot disable its native trust boundary
+    // through a decrypted user environment assignment. Generic developer builds
+    // retain the explicit opt-in switch.
+    image_pin.is_some() || matches!(switch, Some("1" | "true"))
 }
 
 fn pioneer_config(config: &Config, api_key: Option<&str>) -> Value {

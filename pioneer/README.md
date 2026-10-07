@@ -50,6 +50,11 @@ and main binary from this fork, writes hashes and provenance to ignored
 `openhuman-core`, the module and `modules.toml`; the module goes at
 `/opt/pioneer/lib/libtinycomputer.so`. The binary embeds its expected hash and
 refuses an absent or different artifact instead of downloading an upstream one.
+Pioneer mode skips generic module search paths and overrides, refuses an unknown
+preloaded TinyComputer, and rejects other optional native modules until they
+have an explicit trusted image pin. A build carrying the compiled module pin
+forces this policy even if user environment values clear the local-mode switch.
+MCP and shell tools remain available.
 
 The tenant's full desktop must remain available through an owner-authorized
 single-use Studio session and a continuous binary WebSocket framebuffer stream.
