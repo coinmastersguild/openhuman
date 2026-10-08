@@ -1864,10 +1864,9 @@ impl OpenHumanSessionHost {
         // session knows its own durable destination before any turn runs —
         // which is what lets a host read the conversation back without
         // driving a provider first.
-        let mut builder = SessionBuilder::new(driver)
+        let mut builder = session_builder_for_runtime(driver, pioneer_session_runtime())
             .codec(Arc::new(OpenHumanTranscriptCodec))
-            .hooks(hooks)
-            .retain_recorded_tools(true);
+            .hooks(hooks);
         if let Some(session) = self.session.clone() {
             builder = builder.session(session_locator, session, self.runtime_transcript_meta());
         }
@@ -1982,6 +1981,25 @@ impl OpenHumanSessionHost {
                 .as_ref()
                 .and_then(|session| session.parent_session_id()),
         }
+    }
+}
+
+// Keep construction shared with the persisted-session regression tests.
+pub(super) fn session_builder_for_runtime(
+    driver: Arc<dyn tinyagents_runtime::SessionDriver<OpenHumanRunContext>>,
+    _pioneer_runtime: bool,
+) -> SessionBuilder<OpenHumanRunContext> {
+    SessionBuilder::new(driver).retain_recorded_tools(true)
+}
+
+fn pioneer_session_runtime() -> bool {
+    #[cfg(feature = "modules")]
+    {
+        crate::modules::computer_config::pioneer_local_runtime()
+    }
+    #[cfg(not(feature = "modules"))]
+    {
+        false
     }
 }
 

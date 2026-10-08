@@ -105,3 +105,14 @@ when trusted Pioneer image mode and the exact `402 token budget exhausted`
 signal coincide. Auth/rate limits and generic/BYOK failures retain their prior
 classification. This change is source preparation; the deployed pinned runtime
 is not rebuilt or replaced by these edits.
+
+## Pioneer conversation restart regression
+
+Tests now exercise the durable host codec and production executable-tool guard
+after an installed MCP server receives a new identity. They require Pioneer
+turns to keep exact prior conversation history while admitting only current
+authorized executors; a removed server must not return through historical
+declarations. Generic declaration retention and the executable guard remain
+unchanged. The builder extraction still preserves the existing behavior; the
+Pioneer restart cases are expected to fail before the policy correction. No
+runtime build or deployment is part of this test-first change.
