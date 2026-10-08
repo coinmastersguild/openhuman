@@ -130,3 +130,14 @@ toolkit and may not bypass gated actions. The production executable-tool guard
 is unchanged. Generic builds retain their prior declaration policy. Linux
 behavioral RED/GREEN proof and independent source review are in progress; no
 runtime release or deployment has occurred.
+
+## Bounded authoring-turn regression
+
+The built-in orchestrator declares 15 model calls. Its last call is a
+tool-free conclusion and the preceding call only offers file emission,
+which can stop a multi-step desktop-authoring task before a render runs.
+New acceptance tests require a 30-call floor for the trusted Pioneer
+orchestrator after definition resolution, without changing generic or
+other agents, higher declared caps, timeouts or the existing prepaid budget.
+This tests-first commit preserves the old resolver and is expected to fail
+the two Pioneer authoring-budget regressions. Runtime promotion is pending.

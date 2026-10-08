@@ -964,8 +964,13 @@ impl OpenHumanSessionHost {
         // server, etc. Falls back to the global default when there is no
         // definition for this agent_id.
         let mut effective_agent_config = config.agent.clone();
+        let resolved_cap = super::iteration_budget::resolved_iteration_cap(
+            agent_id,
+            target_def,
+            config.agent.max_tool_iterations,
+        );
         if let Some(def) = target_def {
-            let def_cap = def.effective_max_iterations();
+            let def_cap = resolved_cap;
             log::info!(
                 "[agent::builder] applying definition iteration cap for agent_id={}: \
                  definition.max_iterations={} iteration_policy={:?} -> effective={} \
@@ -976,8 +981,8 @@ impl OpenHumanSessionHost {
                 def_cap,
                 config.agent.max_tool_iterations,
             );
-            effective_agent_config.max_tool_iterations = def_cap;
         }
+        effective_agent_config.max_tool_iterations = resolved_cap;
         // Host-first, so a host tool wins a name collision -- see
         // `HostTurnTools::merge_into`, which owns that rule and why.
         let host_policy = host
