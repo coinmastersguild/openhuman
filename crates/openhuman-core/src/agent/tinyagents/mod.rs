@@ -89,12 +89,12 @@ pub(crate) use turn_runner::{run_root_turn_via_hosted_agent, run_turn_via_tinyag
 #[cfg(test)]
 use tinyagents_harness::runtime::InvalidArgsPolicy;
 #[cfg(test)]
+pub(crate) use turn_policy::run_policy_for;
+#[cfg(test)]
 use turn_policy::{
     model_call_wall_clock_ms, parse_agent_turn_wall_clock_ms, parse_model_call_wall_clock_ms,
     DEFAULT_AGENT_TURN_TIMEOUT_SECS, DEFAULT_MODEL_CALL_TIMEOUT_SECS,
 };
-#[cfg(test)]
-pub(crate) use turn_policy::run_policy_for;
 
 #[cfg(test)]
 #[path = "tinyagents_tests.rs"]
