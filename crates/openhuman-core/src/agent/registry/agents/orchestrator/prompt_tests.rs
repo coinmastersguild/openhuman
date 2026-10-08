@@ -320,6 +320,15 @@ fn build_includes_direct_first_decision_tree() {
 #[test]
 fn build_routes_live_facts_to_the_web_tools_directly() {
     let body = build(&ctx_with(&[])).unwrap();
+    if authoring_guidance::pioneer_runtime() {
+        // This context registers no research tools. Protected Pioneer must not
+        // advertise an unpinned search provider merely because it is built in.
+        for missing in ["web_answer_tool", "web_search_tool", "web_fetch"] {
+            assert!(!body.contains(missing), "unregistered route: {missing}");
+        }
+        assert!(body.contains("`tool_search` in plain words before declining"));
+        return;
+    }
     // There is no research sub-agent: broad research is a deep web answer,
     // done by the orchestrator itself with the web tools on its belt.
     assert!(body.contains("`depth: \"deep\"` for research"));
@@ -573,14 +582,20 @@ fn build_includes_evidence_aware_synthesis_contract() {
     // `web_search_tool` sat in its tool list (thread-7e52b, 2026-09-22). The
     // routing names the web tools so that conclusion has nothing to stand on.
     assert!(!body.contains("listed in this prompt"), "{body}");
-    assert!(body.contains("`web_search_tool`") && body.contains("`web_fetch`"));
+    if authoring_guidance::pioneer_runtime() {
+        assert!(!body.contains("`web_search_tool`") && !body.contains("`web_fetch`"));
+    } else {
+        assert!(body.contains("`web_search_tool`") && body.contains("`web_fetch`"));
+    }
     // With no search tool in its list the model called `web_search_tool` three
     // times and the turn aborted on a validation blocker (Bali trip thread,
     // 2026-09-29): an unknown name must never be retried.
     assert!(body.contains("Tools named by a tool result or `tool_search` are callable by name; other unlisted names always fail, so don't retry them."));
     // The web tools are routed across providers with fallback; forcing a
     // provider disables it.
-    assert!(body.contains("`provider` unset unless named"));
+    if !authoring_guidance::pioneer_runtime() {
+        assert!(body.contains("`provider` unset unless named"));
+    }
     assert!(body.contains("Public facts, news, time and math never go to a service."));
 }
 

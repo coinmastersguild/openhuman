@@ -24,6 +24,9 @@ use std::fmt::Write;
 
 const ARCHETYPE: &str = include_str!("prompt.md");
 
+#[path = "authoring_guidance.rs"]
+mod authoring_guidance;
+
 pub fn build(ctx: &PromptContext<'_>) -> Result<String> {
     use crate::agent::prompts::{PROMPT_TIER_CONTEXT_MARKER, PROMPT_TIER_VOLATILE_MARKER};
 
@@ -66,7 +69,14 @@ pub fn build(ctx: &PromptContext<'_>) -> Result<String> {
     push(
         &mut out,
         &strip_route_lines(
-            ARCHETYPE,
+            &authoring_guidance::apply(
+                ARCHETYPE,
+                authoring_guidance::pioneer_runtime(),
+                &ctx.tools
+                    .iter()
+                    .map(|tool| tool.name.as_ref())
+                    .collect::<Vec<_>>(),
+            ),
             skill_run.is_some() || skill_install.is_some(),
             mcp_available,
         ),
