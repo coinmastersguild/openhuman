@@ -87,9 +87,9 @@ def matches_bytes(repo, entries):
         process.wait()
 
 
-def check_untracked(repo):
+def check_untracked(repo, expected_tree):
     ordinary = git(repo, "ls-files", "--others", "--exclude-standard", "-z")
-    if ordinary:
+    if any(raw and os.fsdecode(raw) not in expected_tree for raw in ordinary.split(b"\0")):
         raise ValueError("Untracked source is not eligible for a public package")
     ignored = git(repo, "ls-files", "--others", "--ignored", "--exclude-standard", "-z")
     for raw in ignored.split(b"\0"):
@@ -127,8 +127,8 @@ def check_repo(repo, relative, expected):
     index = git(repo, "write-tree").strip()
     if index not in {base_tree, allowed}:
         raise ValueError("Tracked staged source differs from its public tree/overlay")
-    check_untracked(repo)
     patched = tree(repo, allowed.decode())
+    check_untracked(repo, patched)
     valid = matches_bytes(repo, patched)
     if not valid and MODE == "before":
         valid = matches_bytes(repo, base)

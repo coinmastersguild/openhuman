@@ -25,4 +25,4 @@ echo "$output"
 
 # Revisions above identify tracked sources; dependency changes are exact pinned patches.
 if ! git diff --quiet --ignore-submodules=all HEAD; then printf 'tracked_source_dirty=true\n' >> "$output/BUILD.txt"; fi
-sha256sum pioneer/*-local.patch >> "$output/BUILD.txt"
+sha256sum pioneer/*.patch >> "$output/BUILD.txt"

@@ -89,8 +89,25 @@ It is not the trusted tenant build and makes no local full-desktop claim.
 Only a reviewed fork release may publish the explicit core/license/receipt
 archive. The template must pin both its fork release URL and archive SHA256.
 The package builder requires every recursive dependency at its recorded public
-gitlink, with only the three committed patch overlays. It compares actual file
+gitlink, with only the committed patch overlays. It compares actual file
 bytes to the public trees before and after patching, and rejects extra tracked,
 untracked or ignored compiler inputs. Generated build outputs are not packaged.
 Initial packages target Linux amd64; Apple Silicon uses Docker amd64 emulation.
 Native arm64 packages will require their own tested build and receipt.
+
+
+## Inline MCP image feedback
+
+The pinned `tinymcp-images.patch` retains static PNG, JPEG and WebP tool images
+as native image follow-ups for both configured tools and generic MCP calls.
+Images never become megabytes of encoded text. The adapter preserves text and
+image order, marks the attachments as untrusted tool output, and does not fetch
+URLs or files. A still preview does not verify animation or a complete video.
+
+Each result permits at most two images, two MiB decoded per image, four MiB
+combined, 4096 pixels on either axis and 4,194,304 source pixels per image.
+Canonical base64, MIME/signature agreement, static-image checks and a full
+bounded decode must all pass. Invalid or animated attachments produce a fixed
+error without echoing their bytes. A failed tool result never forwards images.
+These changes are statically linked into `openhuman-core`; they require no MCP
+plugin or change to the separately pinned TinyComputer module.
