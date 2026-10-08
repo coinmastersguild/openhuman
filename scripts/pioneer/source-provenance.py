@@ -11,6 +11,7 @@ OVERLAYS = {
     "vendor/tinycomputer": "tinycomputer-local.patch",
     "vendor/tinycomputer/vendor/tinyinference": "tinyinference-decisions-local.patch",
     "vendor/pioneer-tinyjevclient": "tinyjevclient-local.patch",
+    "vendor/tinymcp": "tinymcp-images.patch",
 }
 ROOT = Path(sys.argv[1]).resolve()
 MODE = sys.argv[2]
