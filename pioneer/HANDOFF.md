@@ -120,3 +120,13 @@ runtime build or deployment is part of this test-first change.
 The first compile caught a test assertion using an obsolete result field; the
 fixture now checks the actual `is_error` flag before reproducing the behavioral
 failure. The host policy still retains historical declarations at this commit.
+
+The Pioneer host now disables only the merge of missing historical tool
+declarations. `resume` still decodes the complete history and recorded tools;
+`adopt_recorded_tools` still runs before the current turn refresh. MCP aliases
+are reconstructed only from enabled current servers and current offered safe
+tools. Recorded integration actions still require an authoritative connected
+toolkit and may not bypass gated actions. The production executable-tool guard
+is unchanged. Generic builds retain their prior declaration policy. Linux
+behavioral RED/GREEN proof and independent source review are in progress; no
+runtime release or deployment has occurred.

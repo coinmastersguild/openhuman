@@ -1987,9 +1987,12 @@ impl OpenHumanSessionHost {
 // Keep construction shared with the persisted-session regression tests.
 pub(super) fn session_builder_for_runtime(
     driver: Arc<dyn tinyagents_runtime::SessionDriver<OpenHumanRunContext>>,
-    _pioneer_runtime: bool,
+    pioneer_runtime: bool,
 ) -> SessionBuilder<OpenHumanRunContext> {
-    SessionBuilder::new(driver).retain_recorded_tools(true)
+    // A tmpfs registry reinstall changes MCP executor names. History is still
+    // restored, but Pioneer turns must use only their current authorized surface.
+    // Generic hosts keep the upstream recorded-declaration retention policy.
+    SessionBuilder::new(driver).retain_recorded_tools(!pioneer_runtime)
 }
 
 fn pioneer_session_runtime() -> bool {

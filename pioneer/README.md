@@ -111,3 +111,14 @@ bounded decode must all pass. Invalid or animated attachments produce a fixed
 error without echoing their bytes. A failed tool result never forwards images.
 These changes are statically linked into `openhuman-core`; they require no MCP
 plugin or change to the separately pinned TinyComputer module.
+
+## Resuming Pioneer conversations after a restart
+
+A Pioneer restart can reinstall MCP servers with new local identities and tool
+names. Conversation history and recorded declarations stay intact, while the
+next turn advertises the current authorized tool surface. Missing historical
+declarations are not merged back into that surface. Current enabled servers
+and their safe offered tools still govern MCP executor reconstruction; current
+authoritative integration state still governs recorded integration actions.
+The executable-tool check remains mandatory. Generic builds keep the original
+recorded-declaration retention behavior.
