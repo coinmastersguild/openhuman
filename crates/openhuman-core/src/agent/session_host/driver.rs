@@ -575,3 +575,7 @@ fn driver_error_with_snapshot(
 #[cfg(test)]
 #[path = "driver_tests.rs"]
 mod tests;
+
+#[cfg(all(test, feature = "mcp"))]
+#[path = "pioneer_session_tools_tests.rs"]
+mod pioneer_session_tools_tests;
