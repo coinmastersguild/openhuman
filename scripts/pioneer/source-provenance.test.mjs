@@ -10,6 +10,7 @@ const overlays = [
   ['vendor/tinycomputer', 'tinycomputer-local.patch'],
   ['vendor/tinycomputer/vendor/tinyinference', 'tinyinference-decisions-local.patch'],
   ['vendor/pioneer-tinyjevclient', 'tinyjevclient-local.patch'],
+  ['vendor/tinymcp', 'tinymcp-images.patch'],
 ];
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'pioneer-source-provenance-'));
@@ -24,7 +25,7 @@ function fixture() {
     git(path, 'add', '.'); git(path, 'commit', '-qm', 'public dependency');
   }
   repo(root);
-  for (const path of ['vendor/tinycomputer', 'vendor/tinycomputer/vendor/tinyinference', 'vendor/pioneer-tinyjevclient', 'vendor/tinyagents']) repo(join(root, path));
+  for (const path of ['vendor/tinycomputer', 'vendor/tinycomputer/vendor/tinyinference', 'vendor/pioneer-tinyjevclient', 'vendor/tinymcp', 'vendor/tinyagents']) repo(join(root, path));
   // Record nested gitlinks before recording the superproject's vendor pins.
   git(join(root, 'vendor/tinycomputer'), 'add', 'vendor/tinyinference');
   git(join(root, 'vendor/tinycomputer'), 'commit', '-qm', 'nested public dependency pin');
@@ -131,5 +132,20 @@ test('accepts only the public PowerShell CRLF checkout rule, not undeclared sour
     assert.equal(f.check().status, 0, f.check().stderr);
     writeFileSync(join(f.root, 'src/lib.rs'), 'pub fn value() -> u8 { 1 }\r\n');
     const r = f.check(); assert.notEqual(r.status, 0); assert.match(r.stderr, /tracked|overlay/i);
+  } finally { f.cleanup(); }
+});
+
+
+test('accepts only byte-exact new source files declared in a committed overlay', () => {
+  const f = fixture(); try {
+    const sub = join(f.root, 'vendor/tinymcp'); const name = join(sub, 'src/images.rs');
+    writeFileSync(name, 'pub fn public_image_guard() {}\n');
+    f.git(sub, 'add', '-N', 'src/images.rs');
+    writeFileSync(join(f.root, 'pioneer/tinymcp-images.patch'), f.git(sub, 'diff', '--binary', '--full-index', 'HEAD'));
+    f.git(sub, 'reset'); rmSync(name);
+    f.git(f.root, 'add', 'pioneer/tinymcp-images.patch'); f.git(f.root, 'commit', '-qm', 'public new file overlay');
+    f.apply(); assert.equal(f.check('after').status, 0, f.check('after').stderr);
+    writeFileSync(name, 'pub fn private_payload() {}\n');
+    assert.notEqual(f.check('after').status, 0);
   } finally { f.cleanup(); }
 });
