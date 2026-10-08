@@ -587,11 +587,14 @@ pub(super) fn assemble_turn_harness(
     );
 
     // Direct web lookup is for a bounded answer. Once enough search/fetch
-    // results have returned, spend the next model call on synthesis rather
-    // than another variation of the same query. Sub-agent runs keep their own
+    // results have returned, generic runs synthesize. Pioneer closes those
+    // research routes while retaining authorized local authoring; the wrapper
+    // also enforces admission across parallel calls. Sub-agents keep their own
     // budgets and are not narrowed here.
     if subagent_scope.is_none() {
-        harness.push_middleware(Arc::new(middleware::ResearchBudgetMiddleware::new()));
+        let research_budget = Arc::new(middleware::ResearchBudgetMiddleware::new());
+        harness.push_middleware(research_budget.clone());
+        harness.push_tool_middleware(research_budget);
     }
     // SDK-owned tool-policy projection (issue #4249 / tinyagents-full-migration
     // 01.1). Keep this narrow for now: enforce sandbox requirements declared by

@@ -74,7 +74,7 @@ impl Tool for ArchetypeDelegationTool {
         json!({
             "type": "object",
             "required": ["prompt"],
-            "properties": delegation_envelope_properties()
+            "properties": delegation_envelope_properties_for(&self.tool_name, pioneer_runtime())
         })
     }
 
@@ -194,11 +194,9 @@ pub(crate) async fn execute_archetype_delegation_with_live_parent(
         .map(str::trim)
         .filter(|s| !s.is_empty());
 
-    // Async by default: the delegated specialist runs as a durable,
-    // resumable worker and its result comes back as a new chat turn.
-    // `blocking: true` is the opt-in for results that must gate this
-    // reply. (`dispatch_subagent` itself falls back to blocking when
-    // there is no chat thread to deliver an async result into.)
+    // Pioneer image critique ordinarily gates the current authoring turn.
+    // Other delegates retain the async default. Explicit blocking flags keep
+    // their meaning; dispatch still falls back to blocking without a thread.
     let blocking = blocking_for(tool_name, &args, pioneer_runtime());
     let mode = if blocking {
         super::dispatch::DispatchMode::Blocking
@@ -268,10 +266,19 @@ fn pioneer_runtime() -> bool {
     }
 }
 
-fn blocking_for(_tool_name: &str, args: &Value, _pioneer: bool) -> bool {
+fn blocking_for(tool_name: &str, args: &Value, pioneer: bool) -> bool {
     args.get("blocking")
         .and_then(Value::as_bool)
-        .unwrap_or(false)
+        .unwrap_or(pioneer && tool_name == "analyze_image")
+}
+
+fn delegation_envelope_properties_for(tool_name: &str, pioneer: bool) -> Value {
+    let mut properties = delegation_envelope_properties();
+    if pioneer && tool_name == "analyze_image" {
+        properties["blocking"]["default"] = json!(true);
+        properties["blocking"]["description"] = json!("Default true: waits for image analysis inside this turn. Set false only for explicit background work whose result this reply does not need.");
+    }
+    properties
 }
 
 #[cfg(test)]

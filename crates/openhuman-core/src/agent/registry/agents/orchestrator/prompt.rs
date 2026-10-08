@@ -69,7 +69,14 @@ pub fn build(ctx: &PromptContext<'_>) -> Result<String> {
     push(
         &mut out,
         &strip_route_lines(
-            ARCHETYPE,
+            &authoring_guidance::apply(
+                ARCHETYPE,
+                authoring_guidance::pioneer_runtime(),
+                &ctx.tools
+                    .iter()
+                    .map(|tool| tool.name.as_ref())
+                    .collect::<Vec<_>>(),
+            ),
             skill_run.is_some() || skill_install.is_some(),
             mcp_available,
         ),
