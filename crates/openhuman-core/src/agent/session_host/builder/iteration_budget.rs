@@ -22,12 +22,17 @@ fn pioneer_runtime() -> bool {
 }
 
 fn resolve_cap(
-    _agent_id: &str,
+    agent_id: &str,
     definition: Option<&AgentDefinition>,
     global_cap: usize,
-    _pioneer_runtime: bool,
+    pioneer_runtime: bool,
 ) -> usize {
-    definition.map_or(global_cap, AgentDefinition::effective_max_iterations)
+    let cap = definition.map_or(global_cap, AgentDefinition::effective_max_iterations);
+    if pioneer_runtime && agent_id == "orchestrator" {
+        cap.max(30)
+    } else {
+        cap
+    }
 }
 
 #[cfg(test)]

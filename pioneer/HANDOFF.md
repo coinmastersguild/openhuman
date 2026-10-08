@@ -139,5 +139,10 @@ which can stop a multi-step desktop-authoring task before a render runs.
 New acceptance tests require a 30-call floor for the trusted Pioneer
 orchestrator after definition resolution, without changing generic or
 other agents, higher declared caps, timeouts or the existing prepaid budget.
-This tests-first commit preserves the old resolver and is expected to fail
-the two Pioneer authoring-budget regressions. Runtime promotion is pending.
+The tests-first commit preserves the old resolver and is expected to fail
+the two Pioneer authoring-budget regressions. The implementation raises only
+the protected Pioneer orchestrator floor. The existing real tool-call budget
+remains eight times the resolved cap (240 at 30 calls), and per-turn narrowing
+still wins. Service deadlines, gateway prepaid tokens, current tool authority,
+failure breakers and no-replay recovery remain unchanged. Linux validation,
+review and installed acceptance are required before runtime promotion.
