@@ -199,10 +199,7 @@ pub(crate) async fn execute_archetype_delegation_with_live_parent(
     // `blocking: true` is the opt-in for results that must gate this
     // reply. (`dispatch_subagent` itself falls back to blocking when
     // there is no chat thread to deliver an async result into.)
-    let blocking = args
-        .get("blocking")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
+    let blocking = blocking_for(tool_name, &args, pioneer_runtime());
     let mode = if blocking {
         super::dispatch::DispatchMode::Blocking
     } else {
@@ -259,6 +256,27 @@ pub(super) fn delegation_envelope_properties() -> Value {
         }
     })
 }
+
+fn pioneer_runtime() -> bool {
+    #[cfg(feature = "modules")]
+    {
+        crate::modules::computer_config::pioneer_local_runtime()
+    }
+    #[cfg(not(feature = "modules"))]
+    {
+        false
+    }
+}
+
+fn blocking_for(_tool_name: &str, args: &Value, _pioneer: bool) -> bool {
+    args.get("blocking")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
+#[cfg(test)]
+#[path = "archetype_delegation_pioneer_tests.rs"]
+mod pioneer_tests;
 
 fn push_optional_string(out: &mut String, label: &str, value: Option<&Value>) {
     let Some(text) = value.and_then(Value::as_str).map(str::trim) else {

@@ -24,6 +24,9 @@ use std::fmt::Write;
 
 const ARCHETYPE: &str = include_str!("prompt.md");
 
+#[path = "authoring_guidance.rs"]
+mod authoring_guidance;
+
 pub fn build(ctx: &PromptContext<'_>) -> Result<String> {
     use crate::agent::prompts::{PROMPT_TIER_CONTEXT_MARKER, PROMPT_TIER_VOLATILE_MARKER};
 

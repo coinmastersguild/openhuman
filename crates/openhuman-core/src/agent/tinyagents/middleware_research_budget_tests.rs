@@ -11,7 +11,7 @@ fn research_request() -> ModelRequest {
 
 #[tokio::test]
 async fn web_research_concludes_after_eight_reads() {
-    let mw = ResearchBudgetMiddleware::new();
+    let mw = ResearchBudgetMiddleware::for_runtime(false);
     let mut run = ctx();
     for i in 0..7 {
         let name = if i % 2 == 0 {
@@ -52,7 +52,7 @@ async fn web_research_concludes_after_eight_reads() {
 
 #[tokio::test]
 async fn unrelated_tools_do_not_spend_the_web_research_budget() {
-    let mw = ResearchBudgetMiddleware::new();
+    let mw = ResearchBudgetMiddleware::for_runtime(false);
     let mut run = ctx();
     for i in 0..10 {
         mw.after_tool(
