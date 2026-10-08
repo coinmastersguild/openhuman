@@ -119,3 +119,37 @@ async fn pioneer_runtime_generic_eight_reads_still_conclude_all_tools() {
     assert!(request.tools.is_empty());
     assert_eq!(request.tool_choice, ToolChoice::None);
 }
+
+#[tokio::test]
+async fn pioneer_runtime_parallel_web_reads_cannot_overspend_admission() {
+    let mut stack = MiddlewareStack::default();
+    stack.push_tool_middleware(Arc::new(ResearchBudgetMiddleware::for_runtime(true)));
+    let stack = Arc::new(stack);
+    let executor = Arc::new(CountingExecutor(AtomicUsize::new(0)));
+    let mut attempts = tokio::task::JoinSet::new();
+    for index in 0..16 {
+        let stack = stack.clone();
+        let executor = executor.clone();
+        attempts.spawn(async move {
+            let mut ctx = context();
+            let name = [
+                "web_search_tool",
+                "web_answer_tool",
+                "web_contents_tool",
+                "web_fetch",
+            ][index % 4];
+            stack
+                .run_wrapped_tool(&mut ctx, &(), call(name), executor.as_ref())
+                .await
+                .unwrap()
+                .into_result()
+                .is_error
+        });
+    }
+    let mut refused = 0;
+    while let Some(result) = attempts.join_next().await {
+        refused += usize::from(result.unwrap());
+    }
+    assert_eq!(refused, 8);
+    assert_eq!(executor.0.load(Ordering::SeqCst), 8);
+}
