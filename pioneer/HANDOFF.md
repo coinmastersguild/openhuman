@@ -116,3 +116,7 @@ declarations. Generic declaration retention and the executable guard remain
 unchanged. The builder extraction still preserves the existing behavior; the
 Pioneer restart cases are expected to fail before the policy correction. No
 runtime build or deployment is part of this test-first change.
+
+The first compile caught a test assertion using an obsolete result field; the
+fixture now checks the actual `is_error` flag before reproducing the behavioral
+failure. The host policy still retains historical declarations at this commit.

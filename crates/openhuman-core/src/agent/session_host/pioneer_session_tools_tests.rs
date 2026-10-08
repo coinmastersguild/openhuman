@@ -101,7 +101,7 @@ impl SessionDriver<OpenHumanRunContext> for GuardedDriver {
             .map(|tool| tool.name.clone())
             .collect();
         for tool in self.tools.iter().filter(|tool| names.contains(tool.name())) {
-            assert!(tool.execute(json!({})).await.unwrap().success);
+            assert!(!tool.execute(json!({})).await.unwrap().is_error);
         }
         let mut history = request.history;
         history.push(tinyinference_llm::message::Message::assistant(
