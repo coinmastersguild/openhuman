@@ -183,19 +183,20 @@ index 6e228d6..a9a5134 100644
 + "zune-core",
 +]
 diff --git a/crates/tinymcp-bus/src/lib.rs b/crates/tinymcp-bus/src/lib.rs
-index e0be61c..640abf2 100644
+index e0be61c..ba8e815 100644
 --- a/crates/tinymcp-bus/src/lib.rs
 +++ b/crates/tinymcp-bus/src/lib.rs
-@@ -159,6 +159,6 @@ pub use transport::{
+@@ -159,6 +159,7 @@ pub use transport::{
      AuthorizationServerMetadata, HEADER_PROTOCOL_VERSION, HEADER_SESSION_ID,
      LATEST_PROTOCOL_VERSION, McpAuthChallenge, McpAuthorizationContext, McpClientInfo,
      McpInitializeResult, McpRemoteTool, McpServerToolResult, McpSseEvent, McpToolContent,
 -    McpToolResult, ProtectedResourceMetadata, SUPPORTED_PROTOCOL_VERSIONS,
-+    McpToolResult, ProtectedResourceMetadata, SUPPORTED_PROTOCOL_VERSIONS, render_tool_result,
++    McpToolResult, ProtectedResourceMetadata, SUPPORTED_PROTOCOL_VERSIONS, redact_endpoint,
++    render_tool_result,
  };
  pub use version::{CONTRACT_VERSION, is_compatible};
 diff --git a/crates/tinymcp-bus/src/transport/mod.rs b/crates/tinymcp-bus/src/transport/mod.rs
-index 93405a0..5e899d8 100644
+index 93405a0..fe7c782 100644
 --- a/crates/tinymcp-bus/src/transport/mod.rs
 +++ b/crates/tinymcp-bus/src/transport/mod.rs
 @@ -27,8 +27,11 @@
@@ -205,7 +206,7 @@ index 93405a0..5e899d8 100644
 +mod render;
  mod types;
  
-+pub use render::render_tool_result;
++pub use render::{redact_endpoint, render_tool_result};
 +
  pub use types::{
      AuthorizationServerMetadata, HEADER_PROTOCOL_VERSION, HEADER_SESSION_ID,
