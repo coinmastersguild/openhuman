@@ -12,3 +12,4 @@ apply_pinned() {
 apply_pinned vendor/tinycomputer 16446e009c3c2158e5a1bfec24b041d547776e30 tinycomputer-local.patch
 apply_pinned vendor/tinycomputer/vendor/tinyinference c144d609b50cbe64c9af69ac3aa64518cce11c90 tinyinference-decisions-local.patch
 apply_pinned vendor/pioneer-tinyjevclient 84b3983c7e1e14f7515658ceafabb6c4e7967c94 tinyjevclient-local.patch
+apply_pinned vendor/tinymcp 56fee22b71fceebe49bea9d0e2e026fe89dac2b6 tinymcp-images.patch

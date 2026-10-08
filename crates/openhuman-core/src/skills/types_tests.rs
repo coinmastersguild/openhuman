@@ -25,24 +25,36 @@ fn an_mcp_result_maps_across_with_its_error_flag_intact() {
 }
 
 #[test]
-fn an_oversized_pass_through_block_is_elided_but_keeps_its_type() {
-    // A base64 image or audio block can be megabytes; a model should see
-    // what kind of block it was, not the bytes.
-    let block = tinymcp_bus::McpToolContent::Json {
-        data: json!({"base64": "x".repeat(70 * 1024)}),
-    };
-    let value = elide_oversized_block(&block);
-    assert_eq!(value["type"], "json");
-    let marker = value["data"].as_str().expect("an elided marker");
-    assert!(marker.contains("bytes elided"), "{marker}");
-    assert!(!marker.contains("xxxxx"), "the payload must not survive");
+fn pioneer_runtime_host_mcp_conversion_uses_the_same_bounded_adapter() {
+    let result = tool_result_from_mcp(tinymcp_bus::McpToolResult::json(
+        json!({"base64":"x".repeat(70 * 1024)}),
+    ));
+    assert!(!result.output().contains("xxxxx"));
+    assert!(result.output().contains("bytes elided"));
+    let result = tool_result_from_mcp(tinymcp_bus::McpToolResult {
+        content: vec![tinymcp_bus::McpToolContent::Image {
+            data: "bad".into(),
+            mime_type: "image/png".into(),
+        }],
+        is_error: false,
+        markdown_formatted: None,
+    });
+    assert!(result.is_error);
+    assert!(result.follow_up.is_empty());
+    assert!(!result.output().contains("bad"));
 }
 
 #[test]
-fn a_small_pass_through_block_is_carried_whole() {
-    let block = tinymcp_bus::McpToolContent::Json {
-        data: json!({"n": 42}),
-    };
-    let value = elide_oversized_block(&block);
-    assert_eq!(value, json!({"type": "json", "data": {"n": 42}}));
+fn pioneer_runtime_host_mcp_images_reach_the_native_follow_up_channel() {
+    let data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgZGIGAAAOAAfXb+R4AAAAAElFTkSuQmCC";
+    let result = tool_result_from_mcp(tinymcp::render_tool_result(&json!({"content":[
+        {"type":"text","text":"preview"}, {"type":"image","mimeType":"image/png","data":data}
+    ]})));
+    assert!(!result.is_error);
+    assert!(result.text().contains("preview"));
+    assert_eq!(result.follow_up.len(), 2);
+    assert!(
+        matches!(&result.follow_up[1], ToolContent::Image { media_type, data: tinytools::ImageData::Base64(value) } if media_type == "image/png" && value == data)
+    );
+    assert!(!result.output().contains(data));
 }

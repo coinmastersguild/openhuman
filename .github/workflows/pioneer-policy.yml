@@ -49,5 +49,7 @@ jobs:
           ../../scripts/ci-cancel-aware.sh cargo test --locked --jobs 4 pioneer_gateway
       - name: Check trusted host local configuration
         run: scripts/ci-cancel-aware.sh cargo test --locked --jobs 4 -p openhuman --no-default-features --features modules,mcp,skills,flows,http-server,scheduler-gate pioneer_runtime --lib
+      - name: Check native MCP image feedback
+        run: scripts/ci-cancel-aware.sh cargo test --manifest-path vendor/tinymcp/Cargo.toml --locked --jobs 4 -p tinymcp --no-default-features --features tools,rustls-tls pioneer_runtime
       - name: Typecheck the real fork core
         run: scripts/ci-cancel-aware.sh cargo check --locked --jobs 4 -p openhuman-cli --bin openhuman-core --no-default-features --features bin-tools,http-server,modules,mcp,skills,flows,scheduler-gate,jev
