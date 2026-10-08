@@ -122,3 +122,14 @@ and their safe offered tools still govern MCP executor reconstruction; current
 authoritative integration state still governs recorded integration actions.
 The executable-tool check remains mandatory. Generic builds keep the original
 recorded-declaration retention behavior.
+
+## Bounded desktop-authoring turns
+
+The trusted Pioneer orchestrator has a floor of 30 model calls per turn,
+resolved after its agent definition. Generic runtimes and other agent IDs keep
+their existing caps, and a higher declared cap is preserved. The final-call
+wrap-up stays enabled; this gives ordinary authoring more working rounds before
+it withdraws tools and reports a checkpoint. It does not extend service
+deadlines, remove prepaid token limits, authorize extra tools or replay tasks.
+The existing real tool-call bound remains eight calls per model iteration and
+any explicit per-turn narrowing still applies.
